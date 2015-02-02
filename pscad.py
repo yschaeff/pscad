@@ -21,29 +21,21 @@ def print_buffer(win, buffer):
     my, mx = win.getmaxyx()
     win.addnstr(my-1, 0, text, mx-1, curses.A_REVERSE)
 
-def render(node, pwin, sel_node, index=0, depth=0, root=True):
-    y,x = pwin.getyx()
+def render(node, pwin, sel_node, y=0, x=0):
     highlight = 0
-    offset = 0
     INDENT = 4
     my, mx = pwin.getmaxyx()
 
-    if not index%2:
-        offset = 1
-    
-    if root:
-        y, x = 0, 0
     if node == sel_node:
         highlight = curses.A_BOLD|curses.color_pair(3)
     pwin.addnstr(y, x, " "*mx, mx-x-1, highlight)
     pwin.addnstr(y, x, str(node), mx-x-1, highlight)
 
     h = 1;
-    for i, child in enumerate(node.children):
+    for child in node.children:
         if y+h+1 > my:
             break
-        pwin.move(y+h, x+INDENT)
-        ch = render(child, pwin, sel_node, i+offset, depth+1, False)
+        ch = render(child, pwin, sel_node, y+h, x+INDENT)
         for j in range(ch):
             pwin.addnstr(y+h+j, x, " "*INDENT, mx-x-1, highlight)
         h += ch
@@ -191,7 +183,7 @@ def main(stdscr):
             y,x = stdscr.getmaxyx()
             tree_h, sel_idx, sel_h = height(tree, sel_node)
             pad = curses.newpad(tree_h, x)
-            render(tree, pad, sel_node, sel_idx)
+            render(tree, pad, sel_node)
 
 
             if sel_idx < scroll:
@@ -218,5 +210,3 @@ def main(stdscr):
 
 
 curses.wrapper(main)
-#~ import_scad('/home/yuri/Documents/headphone/headphon0.scad')
-#~ import_scad('/home/yuri/Documents/headphone/test.scad')
