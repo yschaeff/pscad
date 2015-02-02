@@ -31,7 +31,8 @@ def render(node, pwin, sel_node, index=0, depth=0, root=True):
     if not index%2:
         offset = 1
     
-    if root: y, x = 0, 0
+    if root:
+        y, x = 0, 0
     if node == sel_node:
         highlight = curses.A_BOLD|curses.color_pair(3)
     pwin.addnstr(y, x, " "*mx, mx-x-1, highlight)
@@ -48,13 +49,31 @@ def render(node, pwin, sel_node, index=0, depth=0, root=True):
         h += ch
     return h
 
+def height(node, sel_node): #-> height, sel_height
+    s = None
+    l = None
+    if node == sel_node: s = 0
+    h = 1;
+    for i, child in enumerate(node.children):
+        ch, sel, hh = height(child, sel_node)
+        if sel != None:
+            s = h+sel
+            l = hh
+        h += ch
+    if s == 0:
+        l = h
+    return h, s, l
+
 def main(stdscr):
     curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
     buffer = None
-    
+
     tree = None
     sel_node = tree
+    scroll = 0
     usage(stdscr)
+    print_buffer(stdscr, buffer)
     while 1:
         c = stdscr.getch()
         if c == ord('n'):
@@ -168,9 +187,32 @@ def main(stdscr):
             if sel_node:
                 sel_node = sel_node.next()
 
-        stdscr.clear()
         if tree:
-            render(tree, stdscr, sel_node)
+            y,x = stdscr.getmaxyx()
+            tree_h, sel_idx, sel_h = height(tree, sel_node)
+            pad = curses.newpad(tree_h, x)
+            render(tree, pad, sel_node, sel_idx)
+
+
+            if sel_idx < scroll:
+                scroll -= y/2
+                scroll = max(0, scroll)
+            elif sel_idx-scroll >= y-1:
+                scroll += y/2
+            elif (sel_idx-scroll)+sel_h > y and sel_h<y:
+                d = (sel_idx-scroll+sel_h) - y
+                scroll += d
+
+            stdscr.addnstr(y-1, 15, str((sel_idx, sel_h, y, scroll)), x-1, curses.A_REVERSE)
+
+            pad.refresh(0+scroll,0, 0,0, y-2, x-1)
+            if tree_h-scroll < y:
+                pad = curses.newpad(y-(tree_h-scroll), x)
+                pad.refresh(0,0, (tree_h-scroll),0, y-2, x-1)
+                
+        else:
+            stdscr.clear()
+
         usage(stdscr)
         print_buffer(stdscr, buffer)
 
