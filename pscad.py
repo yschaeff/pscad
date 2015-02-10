@@ -85,6 +85,9 @@ def main(stdscr):
         elif c == ord('i'): #import
             tree = importer.import_scad('/home/yuri/Documents/headphone/headphon0.scad')
             sel_node = tree
+        elif c == ord('e'): #export
+            r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
+            if r!=0: exit(r)
         elif c == ord('q'): #quit
             break
         elif c == ord('Y'):
@@ -182,6 +185,7 @@ def main(stdscr):
         if tree:
             y,x = stdscr.getmaxyx()
             tree_h, sel_idx, sel_h = height(tree, sel_node)
+            #~ sel_idx2 = sel_node.tree_index()
             pad = curses.newpad(tree_h, x)
             render(tree, pad, sel_node)
 
@@ -192,7 +196,7 @@ def main(stdscr):
             elif sel_idx-scroll >= y-1:
                 scroll += y/2
             elif (sel_idx-scroll)+sel_h > y and sel_h<y:
-                d = (sel_idx-scroll+sel_h) - y
+                d = (sel_idx-scroll+sel_h+1) - y
                 scroll += d
 
             stdscr.addnstr(y-1, 15, str((sel_idx, sel_h, y, scroll)), x-1, curses.A_REVERSE)
@@ -209,4 +213,7 @@ def main(stdscr):
         print_buffer(stdscr, buffer)
 
 
-curses.wrapper(main)
+#~ curses.wrapper(main)
+
+tree = importer.import_scad('/home/yuri/Documents/headphone/headphon0.scad')
+r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)

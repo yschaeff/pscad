@@ -14,10 +14,11 @@ class Node():
         node.parent = self
         self.children.append(node)
 
-    #~ def index_at_parent
-
     def __str__(self):
-        return str(self.content)
+        #~ if self.parent:
+            #~ return str(self.content)+"-"+self.parent.content
+        #~ else:
+            return str(self.content)
     def __repr__(self):
         return "N()"
 
@@ -31,6 +32,12 @@ class Node():
         return None
 
     def next(self):
+        n = self.depth_first_walk()
+        if not n:
+            return self
+        return n
+
+    def depth_first_walk(self):
         if self.children:
             return self.children[0]
         elif not self.parent:
@@ -38,7 +45,7 @@ class Node():
         next = self.parent.rnext(self)
         if next:
             return next
-        return self
+        return None
 
     def left(self):
         if not self.children:
@@ -55,3 +62,16 @@ class Node():
         if not self.parent:
             return self
         return self.parent.rprev(self)
+
+    #~ def idxr(self, child):
+        #~ i = self.children.index(child)+1
+        #~ if not self.parent:
+            #~ return i
+        #~ else:
+            #~ return i+self.parent.idxr(self)
+            #~ 
+    #~ def tree_index(self):
+        #~ if not self.parent:
+            #~ return 0
+        #~ else:
+            #~ return self.parent.idxr(self)
