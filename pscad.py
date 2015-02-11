@@ -8,8 +8,22 @@ from copy import deepcopy
 def usage(win):
     helptext = "yYxXpP (in) [dui trs]"
     my, mx = win.getmaxyx()
-    win.addnstr(my-1, mx-1-len(helptext), helptext, mx-1, curses.A_REVERSE)
+    win.addnstr(my-2, mx-len(helptext)-1, " ", mx-1)
+    win.addnstr(my-2, mx-len(helptext), helptext, mx-1, curses.A_REVERSE)
+
+def status(win, text=None):
+    global status_string
+
+    if "status_string" not in globals():
+        status_string = ""
     
+    if text:
+        status_string = text
+    my, mx = win.getmaxyx()
+    win.move(my-1, 0)
+    win.clrtoeol()
+    win.addnstr(my-1, 0, status_string, mx-1, curses.A_REVERSE)
+
 def print_buffer(win, buffer):
     if not buffer:
         text = "Buffer empty"
@@ -19,7 +33,9 @@ def print_buffer(win, buffer):
         text = "Buffer: " + str(buffer)
     
     my, mx = win.getmaxyx()
-    win.addnstr(my-1, 0, text, mx-1, curses.A_REVERSE)
+    win.move(my-2, 0)
+    win.clrtoeol()
+    win.addnstr(my-2, 0, text, mx-1, curses.A_REVERSE)
 
 def render(node, pwin, sel_node, y=0, x=0):
     highlight = 0
@@ -64,8 +80,8 @@ def main(stdscr):
     tree = None
     sel_node = tree
     scroll = 0
-    usage(stdscr)
     print_buffer(stdscr, buffer)
+    usage(stdscr)
     while 1:
         c = stdscr.getch()
         if c == ord('n'):
@@ -104,10 +120,10 @@ def main(stdscr):
                     buffer.parent.children.remove(buffer)
         elif c == ord('y'):
             if sel_node:
-                buffer = sel_node
                 if not sel_node.parent:
-                    pass
+                    status(stdscr, "You are not allowed the yank the root")
                 else:
+                    buffer = sel_node
                     q = sel_node.depth_first_walk()
                     if q:
                         sel_node = q
@@ -137,7 +153,7 @@ def main(stdscr):
             if sel_node:
                 t_buffer = sel_node
                 if not sel_node.parent:
-                    pass
+                    status(stdscr, "Could not cut: no selection")
                 else:
                     q = sel_node.depth_first_walk()
                     if q:
@@ -155,7 +171,7 @@ def main(stdscr):
                     t_buffer = None
         elif c == ord('P'):
             if not buffer:
-                pass
+                status(stdscr, "Could not paste buffer empty")
             elif sel_node and not sel_node.parent:
                 pass
             elif sel_node:
@@ -170,7 +186,7 @@ def main(stdscr):
                 sel_node = tree
         elif c == ord('p'):
             if not buffer:
-                pass
+                status(stdscr, "Could not paste buffer empty")
             elif sel_node and not sel_node.parent:
                 pass
             elif sel_node:
@@ -210,16 +226,17 @@ def main(stdscr):
 
             stdscr.addnstr(y-1, 15, str((sel_idx, sel_h, y, scroll)), x-1, curses.A_REVERSE)
 
-            pad.refresh(0+scroll,0, 0,0, y-2, x-1)
+            pad.refresh(0+scroll,0, 0,0, y-3, x-1)
             if tree_h-scroll < y:
                 pad = curses.newpad(y-(tree_h-scroll), x)
-                pad.refresh(0,0, (tree_h-scroll),0, y-2, x-1)
+                pad.refresh(0,0, (tree_h-scroll),0, y-3, x-1)
                 
         else:
             stdscr.clear()
 
-        usage(stdscr)
         print_buffer(stdscr, buffer)
+        usage(stdscr)
+        status(stdscr)
 
 
 curses.wrapper(main)
