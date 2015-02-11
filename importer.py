@@ -112,12 +112,13 @@ def import_scad(filename):
     return tree
 
 def export_scad(filename, tree):
-    
+    if not tree:
+        return 1
     f = open(filename, 'w')
     parent_stack = []
     n = tree.depth_first_walk()
     l = 0
-    while n:
+    while n and n != tree:
         while parent_stack and parent_stack[-1] != n.parent:
             l -= 1
             #~ print "  "*l + "}"

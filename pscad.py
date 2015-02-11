@@ -87,7 +87,8 @@ def main(stdscr):
             sel_node = tree
         elif c == ord('e'): #export
             r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
-            if r!=0: exit(r)
+            #todo disp error
+            #~ if r!=0: exit(r)
         elif c == ord('q'): #quit
             break
         elif c == ord('Y'):
@@ -107,7 +108,11 @@ def main(stdscr):
                 if not sel_node.parent:
                     pass
                 else:
-                    sel_node = sel_node.next()
+                    q = sel_node.depth_first_walk()
+                    if q:
+                        sel_node = q
+                    else:
+                        sel_node = sel_node.prev()
                     i = buffer.parent.children.index(buffer)
 
                     buffer.parent.children.remove(buffer)
@@ -134,7 +139,11 @@ def main(stdscr):
                 if not sel_node.parent:
                     pass
                 else:
-                    sel_node = sel_node.next()
+                    q = sel_node.depth_first_walk()
+                    if q:
+                        sel_node = q
+                    else:
+                        sel_node = sel_node.prev()
                     i = t_buffer.parent.children.index(t_buffer)
 
                     t_buffer.parent.children.remove(t_buffer)
@@ -213,7 +222,7 @@ def main(stdscr):
         print_buffer(stdscr, buffer)
 
 
-#~ curses.wrapper(main)
-
-tree = importer.import_scad('/home/yuri/Documents/headphone/headphon0.scad')
-r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
+curses.wrapper(main)
+#~ 
+#~ tree = importer.import_scad('/home/yuri/Documents/headphone/headphon0.scad')
+#~ r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
