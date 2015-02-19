@@ -14,15 +14,6 @@ class Node():
         self.descendants = d
         return self.descendants
 
-    #~ def update_descendants(self):
-        #~ # children
-        #~ d = sum(map(lambda c: c.descendants, self.children))
-        #~ self.descendants = d + len(self.children)
-        #~ p = self.parent
-        #~ while p:
-            #~ p.update_descendants()
-            #~ p = p.parent
-
     def offset(self, node):
         """Find the distance between self and a subnode"""
         p = node
@@ -36,26 +27,37 @@ class Node():
             node = p
         return offset
 
+    def node_at_offset(self, index):
+        """Find the node closest to index"""
+        if index <= 0 or not self.children:
+            return self
+        d = 1
+        for c in self.children:
+            if d + c.descendants >= index:
+                return c.node_at_offset(index - d)
+            d += c.descendants + 1
+        return self.children[-1].node_at_offset(index)
+
     def merge(self, index, source):
         if not source:
             return self
         assert(source.parent == None)
         assert(index >= 0 and index <= len(self.children))
 
-        select = self
         for i, c in enumerate(source.children):
             self.descendants += 1 + c.descendants
+            p = self.parent
+            while p:
+                p.descendants += 1 + c.descendants
+                p = p.parent
             c.parent = self
-            select = c
             self.children.insert(index + i, c)
         source.children = []
         source.descendants = 0
-        return select
             
     def split(self):
         root = Node("Root")
         if self.parent == None:
-            select = self
             root.children = self.children
             root.descendants = self.descendants
             for c in root.children:
@@ -63,16 +65,26 @@ class Node():
             self.children = []
             self.descendants = 0
         else:
-            select = self.parent
             root.descendants = 1 + self.descendants
-            self.parent.descendants -= root.descendants
+            p = self.parent
+            while p:
+                p.descendants -= root.descendants
+                p = p.parent
             root.children = [self]
             self.parent.children.remove(self)
             self.parent = root
-        return root, select
+        return root
 
     #~ def detach(self):
         
+
+
+    def is_subnode(self, subnode):
+        """Check if node is in fact a sub node of this node"""
+        while subnode:
+            if subnode == self: return True
+            subnode = subnode.parent
+        return False
 
 
     def pop(self, node):
@@ -104,7 +116,7 @@ class Node():
         self.children.append(node)
 
     def __str__(self):
-        return str(self.content)
+        return "(%d) "%self.descendants + str(self.content)
     def __repr__(self):
         return "N()"
 

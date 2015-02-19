@@ -12,7 +12,9 @@ from copy import deepcopy
 # colors
 # undo/redo
 # key_end
-#sel node must be one with closest index
+# sel node must be one with closest index
+# if node no longer in tree find a better match
+### write test if node is subnode
 
 def usage(win):
     helptext = "yYxXpP (in) [dui trs]"
@@ -68,6 +70,27 @@ def render(node, pwin, sel_node, y=0, x=0):
         h += ch
     return h
 
+def paste_before(sel_node, buffer, stdscr):
+    if not buffer:
+        status(stdscr, "Could not paste buffer empty")
+    elif not sel_node:
+        status(stdscr, "no target")
+    elif sel_node.parent:
+        i = sel_node.parent.children.index(sel_node)
+        root = deepcopy(buffer)
+        sel_node.parent.merge(i, root)
+
+def paste_after(sel_node, buffer, stdscr):
+    if not buffer:
+        status(stdscr, "Could not paste buffer empty")
+    elif not sel_node:
+        status(stdscr, "no target")
+    elif sel_node.parent:
+        i = sel_node.parent.children.index(sel_node)+1
+        root = deepcopy(buffer)
+        sel_node.parent.merge(i, root)
+
+
 def main(stdscr):
     curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -98,9 +121,12 @@ def main(stdscr):
             scroll += d
         pad.refresh(0+scroll,0, 0,0, y-3, x-1)
         if tree_h-scroll < y:
-            pad = curses.newpad(y-(tree_h-scroll), x)
-            pad.refresh(0,0, (tree_h-scroll),0, y-3, x-1)
-        #~ status(stdscr, "%d %d %d"%(tree_h, scroll, y))
+            pad = curses.newpad(y-(tree_h-scroll)+1, x)
+            try:
+                pad.refresh(0,0, (tree_h-scroll),0, y-3, x-1)
+            except:
+                status(stdscr, "XXX %d %d %d"%(tree_h, scroll, y))
+        status(stdscr, "%d %d %d"%(tree_h, scroll, y))
         
         c = stdscr.getch()
         if c == ord('n'):
@@ -130,9 +156,9 @@ def main(stdscr):
             break
         elif c == ord('Y'):
             if sel_node:
-                buffer, sel_node = sel_node.split()
-            else:
-                status(stdscr, "No selection, could not yank")
+                i = tree.offset(sel_node)
+                buffer = sel_node.split()
+                sel_node = tree.node_at_offset(i)
         elif c == ord('y'):
             if sel_node:
                 if not sel_node.parent:
@@ -154,9 +180,10 @@ def main(stdscr):
                     buffer.children = []
         elif c == ord('X'):
             if sel_node:
-                _, sel_node = sel_node.split()
-            else:
-                status(stdscr, "No selection, could not cut")
+                i = tree.offset(sel_node)
+                _ = sel_node.split()
+                sel_node = tree.node_at_offset(i)
+                
         elif c == ord('x'):
             if sel_node:
                 t_buffer = sel_node
@@ -177,26 +204,12 @@ def main(stdscr):
                         child.parent = t_buffer.parent
                     t_buffer.children = []
                     t_buffer = None
+                    
         elif c == ord('P'):
-            if not buffer:
-                status(stdscr, "Could not paste buffer empty")
-            elif not sel_node:
-                status(stdscr, "no target")
-            i = 0
-            if sel_node != tree:
-                i = sel_node.parent.children.index(sel_node)
-            root = deepcopy(buffer)
-            sel_node = sel_node.merge(i, root)
+            paste_before(sel_node, buffer, stdscr)
         elif c == ord('p'):
-            if not buffer:
-                status(stdscr, "Could not paste buffer empty")
-            elif not sel_node:
-                status(stdscr, "no target")
-            i = len(sel_node.children)
-            if sel_node != tree:
-                i = sel_node.parent.children.index(sel_node)+1
-            root = deepcopy(buffer)
-            sel_node = sel_node.merge(i, root)
+            paste_after(sel_node, buffer, stdscr)
+
         elif c == curses.KEY_UP:
             if sel_node:
                 sel_node = sel_node.prev()
