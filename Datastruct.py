@@ -5,6 +5,95 @@ class Node():
         self.content = content
         self.parent = None
         self.children = []
+        self.descendants = 0
+
+    def fix_descendants(self):
+        """The number of descendants"""
+        d = sum(map(lambda c: c.fix_descendants(), self.children))
+        d += len(self.children)
+        self.descendants = d
+        return self.descendants
+
+    #~ def update_descendants(self):
+        #~ # children
+        #~ d = sum(map(lambda c: c.descendants, self.children))
+        #~ self.descendants = d + len(self.children)
+        #~ p = self.parent
+        #~ while p:
+            #~ p.update_descendants()
+            #~ p = p.parent
+
+    def offset(self, node):
+        """Find the distance between self and a subnode"""
+        p = node
+        offset = 0
+        while p.parent:
+            for c in p.parent.children:
+                if c == node: break
+                offset += c.descendants + 1
+            offset += 1
+            p = p.parent
+            node = p
+        return offset
+
+    def merge(self, index, source):
+        if not source:
+            return self
+        assert(source.parent == None)
+        assert(index >= 0 and index <= len(self.children))
+
+        select = self
+        for i, c in enumerate(source.children):
+            self.descendants += 1 + c.descendants
+            c.parent = self
+            select = c
+            self.children.insert(index + i, c)
+        source.children = []
+        source.descendants = 0
+        return select
+            
+    def split(self):
+        root = Node("Root")
+        if self.parent == None:
+            select = self
+            root.children = self.children
+            root.descendants = self.descendants
+            for c in root.children:
+                c.parent = root
+            self.children = []
+            self.descendants = 0
+        else:
+            select = self.parent
+            root.descendants = 1 + self.descendants
+            self.parent.descendants -= root.descendants
+            root.children = [self]
+            self.parent.children.remove(self)
+            self.parent = root
+        return root, select
+
+    #~ def detach(self):
+        
+
+
+    def pop(self, node):
+        assert(self.parent == None)
+        root = Node("Root")
+        if self == node:
+            root.children = node.children
+            root.descendants = node.descendants
+            for c in root.children:
+                c.parent = root
+            node.children = []
+            node.descendants = 0
+        else:
+            root.descendants = 1 + node.descendants
+            self.descendants -= root.descendants
+            root.children = [node]
+            self.children.remove(node)
+            node.parent = root
+        return root
+            
+            
         
     def add_child(self, index, node):
         node.parent = self
@@ -15,10 +104,7 @@ class Node():
         self.children.append(node)
 
     def __str__(self):
-        #~ if self.parent:
-            #~ return str(self.content)+"-"+self.parent.content
-        #~ else:
-            return str(self.content)
+        return str(self.content)
     def __repr__(self):
         return "N()"
 
@@ -63,15 +149,4 @@ class Node():
             return self
         return self.parent.rprev(self)
 
-    #~ def idxr(self, child):
-        #~ i = self.children.index(child)+1
-        #~ if not self.parent:
-            #~ return i
-        #~ else:
-            #~ return i+self.parent.idxr(self)
-            #~ 
-    #~ def tree_index(self):
-        #~ if not self.parent:
-            #~ return 0
-        #~ else:
-            #~ return self.parent.idxr(self)
+    

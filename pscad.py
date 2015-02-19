@@ -1,9 +1,18 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 import curses
 from Datastruct import Node
 import importer
 from copy import deepcopy
+
+# TODO
+# Hide document root and make it always present
+# Fix comments
+# output on every change
+# colors
+# undo/redo
+# key_end
+#sel node must be one with closest index
 
 def usage(win):
     helptext = "yYxXpP (in) [dui trs]"
@@ -27,10 +36,12 @@ def status(win, text=None):
 def print_buffer(win, buffer):
     if not buffer:
         text = "Buffer empty"
-    elif buffer.children:
-        text = "Buffer: %s {...}" % str(buffer) 
     else:
-        text = "Buffer: " + str(buffer)
+        #~ buffer = buffer.children[0]
+        if buffer.children:
+            text = "Buffer: %s {...}" % str(buffer) 
+        else:
+            text = "Buffer: " + str(buffer)
     
     my, mx = win.getmaxyx()
     win.move(my-2, 0)
@@ -57,32 +68,40 @@ def render(node, pwin, sel_node, y=0, x=0):
         h += ch
     return h
 
-def height(node, sel_node): #-> height, sel_height
-    s = None
-    l = None
-    if node == sel_node: s = 0
-    h = 1;
-    for i, child in enumerate(node.children):
-        ch, sel, hh = height(child, sel_node)
-        if sel != None:
-            s = h+sel
-            l = hh
-        h += ch
-    if s == 0:
-        l = h
-    return h, s, l
-
 def main(stdscr):
     curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
     buffer = None
 
-    tree = None
+    tree = Node("Document root")
     sel_node = tree
     scroll = 0
-    print_buffer(stdscr, buffer)
-    usage(stdscr)
+    stdscr.refresh()
     while 1:
+        print_buffer(stdscr, buffer)
+        usage(stdscr)
+        status(stdscr)
+
+        y,x = stdscr.getmaxyx()
+        sel_idx = tree.offset(sel_node)
+        tree_h = tree.descendants + 1
+        sel_h = sel_node.descendants + 1
+        pad = curses.newpad(tree_h, x)
+        render(tree, pad, sel_node)
+        if sel_idx < scroll:
+            scroll -= y/2
+            scroll = max(0, scroll)
+        elif sel_idx-scroll >= y-1:
+            scroll += y/2
+        elif (sel_idx-scroll)+sel_h > y and sel_h<y:
+            d = (sel_idx-scroll+sel_h+1) - y
+            scroll += d
+        pad.refresh(0+scroll,0, 0,0, y-3, x-1)
+        if tree_h-scroll < y:
+            pad = curses.newpad(y-(tree_h-scroll), x)
+            pad.refresh(0,0, (tree_h-scroll),0, y-3, x-1)
+        #~ status(stdscr, "%d %d %d"%(tree_h, scroll, y))
+        
         c = stdscr.getch()
         if c == ord('n'):
             #make child of selected node
@@ -99,8 +118,10 @@ def main(stdscr):
                 sel_node = node
                 
         elif c == ord('i'): #import
-            tree = importer.import_scad('/home/yuri/Documents/headphone/headphon0.scad')
+            fn = '/home/yuri/Documents/headphone/headphon0.scad'
+            tree = importer.import_scad(fn)
             sel_node = tree
+            status(stdscr, "imported file %s"%(fn))
         elif c == ord('e'): #export
             r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
             #todo disp error
@@ -109,15 +130,9 @@ def main(stdscr):
             break
         elif c == ord('Y'):
             if sel_node:
-                buffer = sel_node
-                if not sel_node.parent:
-                    tree = None
-                    sel_node = None
-                else:
-                    sel_node = sel_node.parent.rnext(sel_node)
-                    if not sel_node:
-                        sel_node = tree
-                    buffer.parent.children.remove(buffer)
+                buffer, sel_node = sel_node.split()
+            else:
+                status(stdscr, "No selection, could not yank")
         elif c == ord('y'):
             if sel_node:
                 if not sel_node.parent:
@@ -139,16 +154,9 @@ def main(stdscr):
                     buffer.children = []
         elif c == ord('X'):
             if sel_node:
-                t_buffer = sel_node
-                if not sel_node.parent:
-                    tree = None
-                    sel_node = None
-                else:
-                    sel_node = sel_node.parent.rnext(sel_node)
-                    if not sel_node:
-                        sel_node = tree
-                    t_buffer.parent.children.remove(t_buffer)
-                    t_buffer = None
+                _, sel_node = sel_node.split()
+            else:
+                status(stdscr, "No selection, could not cut")
         elif c == ord('x'):
             if sel_node:
                 t_buffer = sel_node
@@ -172,72 +180,31 @@ def main(stdscr):
         elif c == ord('P'):
             if not buffer:
                 status(stdscr, "Could not paste buffer empty")
-            elif sel_node and not sel_node.parent:
-                pass
-            elif sel_node:
+            elif not sel_node:
+                status(stdscr, "no target")
+            i = 0
+            if sel_node != tree:
                 i = sel_node.parent.children.index(sel_node)
-                sel_node.parent.add_child(i, buffer)
-                buffer.parent = sel_node.parent
-                buffer = deepcopy(buffer)
-            else:
-                tree = buffer
-                buffer = deepcopy(buffer)
-                tree.parent = None
-                sel_node = tree
+            root = deepcopy(buffer)
+            sel_node = sel_node.merge(i, root)
         elif c == ord('p'):
             if not buffer:
                 status(stdscr, "Could not paste buffer empty")
-            elif sel_node and not sel_node.parent:
-                pass
-            elif sel_node:
-                i = sel_node.parent.children.index(sel_node)
-                sel_node.parent.add_child(i+1, buffer)
-                buffer.parent = sel_node.parent
-                buffer = deepcopy(buffer)
-            else:
-                tree = buffer
-                buffer = deepcopy(buffer)
-                tree.parent = None
-                sel_node = tree
-
+            elif not sel_node:
+                status(stdscr, "no target")
+            i = len(sel_node.children)
+            if sel_node != tree:
+                i = sel_node.parent.children.index(sel_node)+1
+            root = deepcopy(buffer)
+            sel_node = sel_node.merge(i, root)
         elif c == curses.KEY_UP:
             if sel_node:
                 sel_node = sel_node.prev()
         elif c == curses.KEY_DOWN:
             if sel_node:
                 sel_node = sel_node.next()
-
-        if tree:
-            y,x = stdscr.getmaxyx()
-            tree_h, sel_idx, sel_h = height(tree, sel_node)
-            #~ sel_idx2 = sel_node.tree_index()
-            pad = curses.newpad(tree_h, x)
-            render(tree, pad, sel_node)
-
-
-            if sel_idx < scroll:
-                scroll -= y/2
-                scroll = max(0, scroll)
-            elif sel_idx-scroll >= y-1:
-                scroll += y/2
-            elif (sel_idx-scroll)+sel_h > y and sel_h<y:
-                d = (sel_idx-scroll+sel_h+1) - y
-                scroll += d
-
-            stdscr.addnstr(y-1, 15, str((sel_idx, sel_h, y, scroll)), x-1, curses.A_REVERSE)
-
-            pad.refresh(0+scroll,0, 0,0, y-3, x-1)
-            if tree_h-scroll < y:
-                pad = curses.newpad(y-(tree_h-scroll), x)
-                pad.refresh(0,0, (tree_h-scroll),0, y-3, x-1)
-                
-        else:
-            stdscr.clear()
-
-        print_buffer(stdscr, buffer)
-        usage(stdscr)
-        status(stdscr)
-
+        elif c == curses.KEY_HOME:
+            sel_node = tree
 
 curses.wrapper(main)
 #~ 

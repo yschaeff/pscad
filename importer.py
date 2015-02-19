@@ -108,6 +108,7 @@ def import_scad(filename):
     tree = Node("Document Root")
 
     subtree(tree, cooked)
+    tree.fix_descendants()
     
     return tree
 
