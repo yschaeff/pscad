@@ -260,10 +260,9 @@ def main(stdscr):
         elif c == curses.KEY_HOME:
             sel_node = tree
 
-        status(stdscr, "changes = %d"%changes)
-        if changes|F_STAT_UNDO:
+        if changes & F_STAT_UNDO:
             undo.store(tree)
-        if changes|F_STAT_EXPORT:
+        if changes & F_STAT_EXPORT:
             r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)            
 
 def debug_print_tree(tree, i=0):
