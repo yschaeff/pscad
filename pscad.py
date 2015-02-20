@@ -4,17 +4,14 @@ import curses
 from Datastruct import Node
 import importer
 from copy import deepcopy
+from undo import Undo
 
 # TODO
 # Hide document root and make it always present
 # Fix comments
 # output on every change
 # colors
-# undo/redo
 # key_end
-# sel node must be one with closest index
-# if node no longer in tree find a better match
-### write test if node is subnode
 
 def usage(win):
     helptext = "yYxXpP (in) [dui trs]"
@@ -95,8 +92,10 @@ def main(stdscr):
     curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
     buffer = None
+    undo = Undo(5)
 
     tree = Node("Document root")
+    undo.store(tree)
     sel_node = tree
     scroll = 0
     stdscr.refresh()
@@ -145,6 +144,7 @@ def main(stdscr):
         elif c == ord('i'): #import
             fn = '/home/yuri/Documents/headphone/headphon0.scad'
             tree = importer.import_scad(fn)
+            undo.store(tree)
             sel_node = tree
             status(stdscr, "imported file %s"%(fn))
         elif c == ord('e'): #export
@@ -161,6 +161,7 @@ def main(stdscr):
                 buffer = sel_node.split()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Yanked subtree")
+                undo.store(tree)
 
         elif c == ord('y'):
             if sel_node:
@@ -168,6 +169,7 @@ def main(stdscr):
                 buffer = sel_node.detach()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Yanked node")
+                undo.store(tree)
 
         elif c == ord('X'):
             if sel_node:
@@ -175,6 +177,7 @@ def main(stdscr):
                 _ = sel_node.split()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Cut subtree")
+                undo.store(tree)
                 
         elif c == ord('x'):
             if sel_node:
@@ -182,32 +185,51 @@ def main(stdscr):
                 _ = sel_node.detach()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Cut node")
+                undo.store(tree)
 
         elif c == ord('g'): #gobble
             if sel_node:
                 sel_node.gobble()
                 status(stdscr, "Gobbled node")
+                undo.store(tree)
 
         elif c == ord('G'): #degobble
             if sel_node:
                 sel_node.degobble()
                 status(stdscr, "Degobbled node")
+                undo.store(tree)
 
         elif c == ord('\t'): #cling
             if sel_node:
                 sel_node.cling()
                 status(stdscr, "Clinged node")
+                undo.store(tree)
                     
         elif c == curses.KEY_BTAB: #decling
             if sel_node:
                 sel_node.decling()
                 status(stdscr, "Declinged node")
+                undo.store(tree)
 
         elif c == ord('P'):
             paste_before(sel_node, buffer, stdscr)
+            undo.store(tree)
 
         elif c == ord('p'):
             paste_after(sel_node, buffer, stdscr)
+            undo.store(tree)
+
+        elif c == ord('U'):
+            r = undo.redo()
+            if r:
+                tree = r
+                sel_node = tree
+
+        elif c == ord('u'):
+            r = undo.undo()
+            if r:
+                tree = r
+                sel_node = tree
 
         elif c == curses.KEY_UP:
             if sel_node:
@@ -239,7 +261,6 @@ def main(stdscr):
 
         elif c == curses.KEY_HOME:
             sel_node = tree
-
 
 def debug_print_tree(tree, i=0):
     print "  "*i + str(tree)
