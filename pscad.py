@@ -101,10 +101,6 @@ def main(stdscr):
     scroll = 0
     stdscr.refresh()
     while 1:
-        print_buffer(stdscr, buffer)
-        usage(stdscr)
-        status(stdscr)
-
         y,x = stdscr.getmaxyx()
         sel_idx = tree.offset(sel_node)
         tree_h = tree.descendants + 1
@@ -126,7 +122,11 @@ def main(stdscr):
         if tree_h-scroll < y:
             stdscr.move(tree_h-scroll, 0)
             stdscr.clrtobot()
-        
+
+        print_buffer(stdscr, buffer)
+        usage(stdscr)
+        status(stdscr)
+
         c = stdscr.getch()
         if c == ord('n'):
             #make child of selected node
@@ -151,70 +151,52 @@ def main(stdscr):
             r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
             #todo disp error
             #~ if r!=0: exit(r)
+
         elif c == ord('q'): #quit
             break
+            
         elif c == ord('Y'):
             if sel_node:
                 i = tree.offset(sel_node)
                 buffer = sel_node.split()
                 sel_node = tree.node_at_offset(i)
+                status(stdscr, "Yanked subtree")
+
         elif c == ord('y'):
             if sel_node:
-                if not sel_node.parent:
-                    status(stdscr, "You are not allowed the yank the root")
-                else:
-                    buffer = sel_node
-                    q = sel_node.depth_first_walk()
-                    if q:
-                        sel_node = q
-                    else:
-                        sel_node = sel_node.prev()
-                    i = buffer.parent.children.index(buffer)
+                i = tree.offset(sel_node)
+                buffer = sel_node.detach()
+                sel_node = tree.node_at_offset(i)
+                status(stdscr, "Yanked node")
 
-                    buffer.parent.children.remove(buffer)
-                    buffer.children.reverse()
-                    for child in buffer.children:
-                        buffer.parent.add_child(i, child)
-                        child.parent = buffer.parent
-                    buffer.children = []
         elif c == ord('X'):
             if sel_node:
                 i = tree.offset(sel_node)
                 _ = sel_node.split()
                 sel_node = tree.node_at_offset(i)
+                status(stdscr, "Cut subtree")
                 
         elif c == ord('x'):
             if sel_node:
-                t_buffer = sel_node
-                if not sel_node.parent:
-                    status(stdscr, "Could not cut: no selection")
-                else:
-                    q = sel_node.depth_first_walk()
-                    if q:
-                        sel_node = q
-                    else:
-                        sel_node = sel_node.prev()
-                    i = t_buffer.parent.children.index(t_buffer)
-
-                    t_buffer.parent.children.remove(t_buffer)
-                    t_buffer.children.reverse()
-                    for child in t_buffer.children:
-                        t_buffer.parent.add_child(i, child)
-                        child.parent = t_buffer.parent
-                    t_buffer.children = []
-                    t_buffer = None
+                i = tree.offset(sel_node)
+                _ = sel_node.detach()
+                sel_node = tree.node_at_offset(i)
+                status(stdscr, "Cut node")
                     
         elif c == ord('P'):
             paste_before(sel_node, buffer, stdscr)
+
         elif c == ord('p'):
             paste_after(sel_node, buffer, stdscr)
 
         elif c == curses.KEY_UP:
             if sel_node:
                 sel_node = sel_node.prev()
+
         elif c == curses.KEY_DOWN:
             if sel_node:
                 sel_node = sel_node.next()
+
         elif c == curses.KEY_HOME:
             sel_node = tree
 

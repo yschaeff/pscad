@@ -75,9 +75,25 @@ class Node():
             self.parent = root
         return root
 
-    #~ def detach(self):
-        
+    def detach(self):
+        root = Node("Root")
+        if self.parent == None:
+            return root
+        pidx = self.parent.children.index(self)
+        self.parent.children.pop(pidx)
+        for i, c in enumerate(self.children):
+            c.parent = self.parent
+            self.parent.children.insert(pidx + i, c)
 
+        self.parent.descendants -= 1
+        root.descendants = 1
+        self.descendants = 0
+        self.children = []
+
+        self.parent = root
+        root.children = [self]
+        return root
+            
 
     def is_subnode(self, subnode):
         """Check if node is in fact a sub node of this node"""
