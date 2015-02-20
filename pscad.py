@@ -111,10 +111,12 @@ def main(stdscr):
         pad = curses.newpad(tree_h, x)
         render(tree, pad, sel_node)
         if sel_idx < scroll:
-            scroll -= y/2
+            while sel_idx < scroll:
+                scroll -= (y/2)
             scroll = max(0, scroll)
         elif sel_idx-scroll >= y-1:
-            scroll += y/2
+            while sel_idx-scroll >= y-1:
+                scroll += y/2
         elif (sel_idx-scroll)+sel_h > y and sel_h<y:
             d = (sel_idx-scroll+sel_h+1) - y
             scroll += d
@@ -259,6 +261,18 @@ def main(stdscr):
 
         elif c == curses.KEY_HOME:
             sel_node = tree
+
+        elif c == curses.KEY_END:
+            i = tree.offset(sel_node)
+            sel_node = tree.node_at_offset(tree_h)
+
+        elif c == curses.KEY_PPAGE:
+            i = tree.offset(sel_node)
+            sel_node = tree.node_at_offset(i-y/2)
+
+        elif c == curses.KEY_NPAGE:
+            i = tree.offset(sel_node)
+            sel_node = tree.node_at_offset(i+y/2)
 
         if changes & F_STAT_UNDO:
             undo.store(tree)
