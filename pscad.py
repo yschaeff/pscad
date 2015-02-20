@@ -133,21 +133,7 @@ def main(stdscr):
         changes = F_STAT_CLEAR
 
         c = stdscr.getch()
-        if c == ord('n'):
-            #make child of selected node
-            curses.echo()
-            s = stdscr.getstr(10,0, 15)
-            curses.noecho()
-            node = Node(s)
-            stdscr.addnstr(10,0, " "*15, 15)
-            if not tree or not sel_node:
-                tree = node
-                sel_node = node
-            else:
-                sel_node.add_child(0, node)
-                sel_node = node
-                
-        elif c == ord('i'): #import
+        if c == ord('i'): #import
             fn = '/home/yuri/Documents/headphone/headphon0.scad'
             tree = importer.import_scad(fn)
             changes = F_STAT_EXPORT|F_STAT_UNDO
@@ -226,18 +212,22 @@ def main(stdscr):
             changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('U'):
+            i = tree.offset(sel_node)
             r = undo.redo()
             if r:
                 tree = r
                 sel_node = tree
                 changes = F_STAT_EXPORT
+                sel_node = tree.node_at_offset(i)
 
         elif c == ord('u'):
+            i = tree.offset(sel_node)
             r = undo.undo()
             if r:
                 tree = r
                 sel_node = tree
                 changes = F_STAT_EXPORT
+                sel_node = tree.node_at_offset(i)
 
         elif c == curses.KEY_UP:
             if sel_node:
@@ -270,6 +260,7 @@ def main(stdscr):
         elif c == curses.KEY_HOME:
             sel_node = tree
 
+        status(stdscr, "changes = %d"%changes)
         if changes|F_STAT_UNDO:
             undo.store(tree)
         if changes|F_STAT_EXPORT:
