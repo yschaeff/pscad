@@ -119,14 +119,13 @@ def main(stdscr):
         elif (sel_idx-scroll)+sel_h > y and sel_h<y:
             d = (sel_idx-scroll+sel_h+1) - y
             scroll += d
+
+        # paint screen
         pad.refresh(0+scroll,0, 0,0, y-3, x-1)
+        # clear unpainted screen
         if tree_h-scroll < y:
-            pad = curses.newpad(y-(tree_h-scroll)+1, x)
-            try:
-                pad.refresh(0,0, (tree_h-scroll),0, y-3, x-1)
-            except:
-                status(stdscr, "XXX %d %d %d"%(tree_h, scroll, y))
-        status(stdscr, "%d %d %d"%(tree_h, scroll, y))
+            stdscr.move(tree_h-scroll, 0)
+            stdscr.clrtobot()
         
         c = stdscr.getch()
         if c == ord('n'):
