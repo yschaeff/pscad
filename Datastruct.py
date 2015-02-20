@@ -93,7 +93,55 @@ class Node():
         self.parent = root
         root.children = [self]
         return root
-            
+
+    def gobble(self):
+        if self.parent == None:
+            return
+        pidx = self.parent.children.index(self)
+        if len(self.parent.children) < pidx + 2:
+            return
+        sibling = self.parent.children.pop(pidx + 1)
+        self.children.append(sibling)
+        self.descendants += 1 + sibling.descendants
+        sibling.parent = self
+
+    def degobble(self):
+        if self.parent == None:
+            return
+        pidx = self.parent.children.index(self)
+        if not self.children:
+            return
+        child = self.children.pop()
+        self.descendants -= 1 + child.descendants
+        child.parent = self.parent
+        self.parent.children.insert(pidx+1, child)
+
+    def cling(self):
+        """Become a child of your smaller sibling"""
+        if self.parent == None:
+            return
+        pidx = self.parent.children.index(self)
+        if pidx <= 0:
+            return
+        self.parent.children.pop(pidx)
+        self.parent = self.parent.children[pidx-1]
+        self.parent.children.append(self)
+        self.parent.descendants += 1 + self.descendants
+
+    def decling(self):
+        """Become a child of your grandparent"""
+        if self.parent == None:
+            return
+        if self.parent.parent == None:
+            return
+        pidx = self.parent.children.index(self)
+        if pidx +1 != len(self.parent.children):
+            return
+        self.parent.children.pop()
+        self.parent.descendants -= 1 + self.descendants
+        pidx = self.parent.parent.children.index(self.parent)
+        self.parent = self.parent.parent
+        self.parent.children.insert(pidx+1, self)
 
     def is_subnode(self, subnode):
         """Check if node is in fact a sub node of this node"""

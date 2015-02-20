@@ -112,6 +112,21 @@ def import_scad(filename):
     
     return tree
 
+def import2_scad(filename):
+    f = open(filename)
+    raw = f.read()
+
+    ## TODO strip comments
+    cooked = raw.translate(None, "\t\n")
+
+    tree = Node("Document Root")
+
+    subtree(tree, cooked)
+
+
+    tree.fix_descendants()
+    return tree
+
 def export_scad(filename, tree):
     if not tree:
         return 1

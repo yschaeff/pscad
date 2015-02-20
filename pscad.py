@@ -182,7 +182,27 @@ def main(stdscr):
                 _ = sel_node.detach()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Cut node")
+
+        elif c == ord('g'): #gobble
+            if sel_node:
+                sel_node.gobble()
+                status(stdscr, "Gobbled node")
+
+        elif c == ord('G'): #degobble
+            if sel_node:
+                sel_node.degobble()
+                status(stdscr, "Degobbled node")
+
+        elif c == ord('\t'): #cling
+            if sel_node:
+                sel_node.cling()
+                status(stdscr, "Clinged node")
                     
+        elif c == curses.KEY_BTAB: #decling
+            if sel_node:
+                sel_node.decling()
+                status(stdscr, "Declinged node")
+
         elif c == ord('P'):
             paste_before(sel_node, buffer, stdscr)
 
@@ -200,7 +220,13 @@ def main(stdscr):
         elif c == curses.KEY_HOME:
             sel_node = tree
 
+
+def debug_print_tree(tree, i=0):
+    print "  "*i + str(tree)
+    for c in tree.children:
+         debug_print_tree(c, i+1)
+         
 curses.wrapper(main)
-#~ 
 #~ tree = importer.import_scad('/home/yuri/Documents/headphone/headphon0.scad')
+#~ debug_print_tree(tree)
 #~ r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
