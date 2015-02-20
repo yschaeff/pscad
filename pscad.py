@@ -217,6 +217,26 @@ def main(stdscr):
             if sel_node:
                 sel_node = sel_node.next()
 
+        elif c == curses.KEY_SLEFT:
+            if sel_node and sel_node.parent:
+                pidx = sel_node.parent.children.index(sel_node)
+                if pidx > 0:
+                    sel_node = sel_node.parent.children[pidx-1]
+
+        elif c == curses.KEY_SRIGHT:
+            if sel_node and sel_node.parent:
+                pidx = sel_node.parent.children.index(sel_node)
+                if pidx < len(sel_node.parent.children)-1:
+                    sel_node = sel_node.parent.children[pidx+1]
+
+        elif c == curses.KEY_RIGHT:
+            if sel_node and sel_node.children:
+                sel_node = sel_node.children[0]
+
+        elif c == curses.KEY_LEFT:
+            if sel_node and sel_node.parent:
+                sel_node = sel_node.parent
+
         elif c == curses.KEY_HOME:
             sel_node = tree
 
