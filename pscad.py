@@ -7,16 +7,18 @@ from copy import deepcopy
 from undo import Undo
 
 UNDO_CAP = 100
+F_STAT_CLEAR  = 0
+F_STAT_UNDO   = 1
+F_STAT_EXPORT = 2
 
 # TODO
-# Hide document root and make it always present
 # Fix comments
 # output on every change
 # colors
 # key_end
 
 def usage(win):
-    helptext = "yYxXpP (in) [dui trs]"
+    helptext = "yYxXpPgGuU tab/stab (in) [dui trs]"
     my, mx = win.getmaxyx()
     win.addnstr(my-2, mx-len(helptext)-1, " ", mx-1)
     win.addnstr(my-2, mx-len(helptext), helptext, mx-1, curses.A_REVERSE)
@@ -128,6 +130,8 @@ def main(stdscr):
         usage(stdscr)
         status(stdscr)
 
+        changes = F_STAT_CLEAR
+
         c = stdscr.getch()
         if c == ord('n'):
             #make child of selected node
@@ -146,7 +150,7 @@ def main(stdscr):
         elif c == ord('i'): #import
             fn = '/home/yuri/Documents/headphone/headphon0.scad'
             tree = importer.import_scad(fn)
-            undo.store(tree)
+            changes = F_STAT_EXPORT|F_STAT_UNDO
             sel_node = tree
             status(stdscr, "imported file %s"%(fn))
         elif c == ord('e'): #export
@@ -163,7 +167,7 @@ def main(stdscr):
                 buffer = sel_node.split()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Yanked subtree")
-                undo.store(tree)
+                changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('y'):
             if sel_node:
@@ -171,7 +175,7 @@ def main(stdscr):
                 buffer = sel_node.detach()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Yanked node")
-                undo.store(tree)
+                changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('X'):
             if sel_node:
@@ -179,7 +183,7 @@ def main(stdscr):
                 _ = sel_node.split()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Cut subtree")
-                undo.store(tree)
+                changes = F_STAT_EXPORT|F_STAT_UNDO
                 
         elif c == ord('x'):
             if sel_node:
@@ -187,51 +191,53 @@ def main(stdscr):
                 _ = sel_node.detach()
                 sel_node = tree.node_at_offset(i)
                 status(stdscr, "Cut node")
-                undo.store(tree)
+                changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('g'): #gobble
             if sel_node:
                 sel_node.gobble()
                 status(stdscr, "Gobbled node")
-                undo.store(tree)
+                changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('G'): #degobble
             if sel_node:
                 sel_node.degobble()
                 status(stdscr, "Degobbled node")
-                undo.store(tree)
+                changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('\t'): #cling
             if sel_node:
                 sel_node.cling()
                 status(stdscr, "Clinged node")
-                undo.store(tree)
+                changes = F_STAT_EXPORT|F_STAT_UNDO
                     
         elif c == curses.KEY_BTAB: #decling
             if sel_node:
                 sel_node.decling()
                 status(stdscr, "Declinged node")
-                undo.store(tree)
+                changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('P'):
             paste_before(sel_node, buffer, stdscr)
-            undo.store(tree)
+            changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('p'):
             paste_after(sel_node, buffer, stdscr)
-            undo.store(tree)
+            changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('U'):
             r = undo.redo()
             if r:
                 tree = r
                 sel_node = tree
+                changes = F_STAT_EXPORT
 
         elif c == ord('u'):
             r = undo.undo()
             if r:
                 tree = r
                 sel_node = tree
+                changes = F_STAT_EXPORT
 
         elif c == curses.KEY_UP:
             if sel_node:
@@ -263,6 +269,11 @@ def main(stdscr):
 
         elif c == curses.KEY_HOME:
             sel_node = tree
+
+        if changes|F_STAT_UNDO:
+            undo.store(tree)
+        if changes|F_STAT_EXPORT:
+            r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)            
 
 def debug_print_tree(tree, i=0):
     print "  "*i + str(tree)
