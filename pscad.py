@@ -6,6 +6,8 @@ import importer
 from copy import deepcopy
 from undo import Undo
 
+UNDO_CAP = 100
+
 # TODO
 # Hide document root and make it always present
 # Fix comments
@@ -92,7 +94,7 @@ def main(stdscr):
     curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
     buffer = None
-    undo = Undo(5)
+    undo = Undo(UNDO_CAP)
 
     tree = Node("Document root")
     undo.store(tree)

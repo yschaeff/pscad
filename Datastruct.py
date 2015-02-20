@@ -181,17 +181,6 @@ class Node():
         node.parent = self
         self.children.append(node)
 
-    #~ def __deepcopy__(self, x):
-        #~ return self.deepcopy(None)
-#~ 
-    #~ def deepcopy(self, p):
-        #~ n = Node(deepcopy(self.content))
-        #~ n.parent = p
-        #~ n.descendants = self.descendants
-        #~ for c in self.children:
-            #~ n.children.append(c.deepcopy(n))
-        #~ return n
-
     def __str__(self):
         return "(%d) "%self.descendants + str(self.content)
     def __repr__(self):
