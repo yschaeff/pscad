@@ -182,7 +182,8 @@ class Node():
         self.children.append(node)
 
     def __str__(self):
-        return "(%d) "%self.descendants + str(self.content)
+        #~ return "(%d) "%self.descendants + str(self.content)
+        return str(self.content)
     def __repr__(self):
         return "N()"
 

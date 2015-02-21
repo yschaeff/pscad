@@ -5,6 +5,7 @@ from Datastruct import Node
 import importer
 from copy import deepcopy
 from undo import Undo
+from pretty import fabulous
 
 UNDO_CAP = 100
 F_STAT_CLEAR  = 0
@@ -13,9 +14,7 @@ F_STAT_EXPORT = 2
 
 # TODO
 # Fix comments
-# output on every change
 # colors
-# key_end
 
 def usage(win):
     helptext = "yYxXpPgGuU tab/stab (in) [dui trs]"
@@ -50,6 +49,8 @@ def print_buffer(win, buffer):
     win.move(my-2, 0)
     win.clrtoeol()
     win.addnstr(my-2, 0, text, mx-1, curses.A_REVERSE)
+    
+    
 
 def render(node, pwin, sel_node, y=0, x=0):
     highlight = 0
@@ -58,8 +59,11 @@ def render(node, pwin, sel_node, y=0, x=0):
 
     if node == sel_node:
         highlight = curses.A_BOLD|curses.color_pair(3)
-    pwin.addnstr(y, x, " "*mx, mx-x-1, highlight)
-    pwin.addnstr(y, x, str(node), mx-x-1, highlight)
+        pwin.addnstr(y, x, " "*mx, mx-x-1, highlight)
+        pwin.addnstr(y, x, str(node), mx-x-1, highlight)
+    else:
+        #~ pwin.addnstr(y, x, str(node), mx-x-1, highlight)
+        fabulous(pwin, y,x, mx, str(node.content))
 
     h = 1;
     for child in node.children:
@@ -91,10 +95,15 @@ def paste_after(sel_node, buffer, stdscr):
         root = deepcopy(buffer)
         sel_node.parent.merge(i, root)
 
+def init_colors():
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE) #status
+    curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)  #select
+    curses.init_pair(4, curses.COLOR_RED,   curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_BLUE,  curses.COLOR_BLACK)
+    curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
 def main(stdscr):
-    curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)
-    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    init_colors()
     buffer = None
     undo = Undo(UNDO_CAP)
 
