@@ -122,11 +122,11 @@ def main(stdscr):
         render(tree, pad, sel_node)
         if sel_idx < scroll:
             while sel_idx < scroll:
-                scroll -= (y/2)
+                scroll -= (y//2)
             scroll = max(0, scroll)
         elif sel_idx-scroll >= y-1:
             while sel_idx-scroll >= y-1:
-                scroll += y/2
+                scroll += y//2
         elif (sel_idx-scroll)+sel_h > y and sel_h<y:
             d = (sel_idx-scroll+sel_h+1) - y
             scroll += d
@@ -146,7 +146,7 @@ def main(stdscr):
 
         c = stdscr.getch()
         if c == ord('i'): #import
-            fn = '/home/yuri/Documents/headphone/headphon0.scad'
+            fn = '/home/yuri/Documents/pscad/headphon0.scad'
             t = importer.import_scad(fn)
             if not t:
                 status(stdscr, "Error importing file %s"%(fn))
@@ -282,11 +282,11 @@ def main(stdscr):
 
         elif c == curses.KEY_PPAGE:
             i = tree.offset(sel_node)
-            sel_node = tree.node_at_offset(i-y/2)
+            sel_node = tree.node_at_offset(i-y//2)
 
         elif c == curses.KEY_NPAGE:
             i = tree.offset(sel_node)
-            sel_node = tree.node_at_offset(i+y/2)
+            sel_node = tree.node_at_offset(i+y//2)
 
         if changes & F_STAT_UNDO:
             undo.store(tree)
