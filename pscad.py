@@ -13,8 +13,9 @@ F_STAT_UNDO   = 1
 F_STAT_EXPORT = 2
 
 # TODO
-# Fix comments
-# colors
+# strip ;
+# test modifiers
+# hotkeys for diff etc
 
 def usage(win):
     helptext = "yYxXpPgGuU tab/stab (in) [dui trs]"
@@ -146,10 +147,14 @@ def main(stdscr):
         c = stdscr.getch()
         if c == ord('i'): #import
             fn = '/home/yuri/Documents/headphone/headphon0.scad'
-            tree = importer.import_scad(fn)
-            changes = F_STAT_EXPORT|F_STAT_UNDO
-            sel_node = tree
-            status(stdscr, "imported file %s"%(fn))
+            t = importer.import_scad(fn)
+            if not t:
+                status(stdscr, "Error importing file %s"%(fn))
+            else:
+                tree = t
+                changes = F_STAT_EXPORT|F_STAT_UNDO
+                sel_node = tree
+                status(stdscr, "imported file %s"%(fn))
         elif c == ord('e'): #export
             r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
             #todo disp error
@@ -289,11 +294,11 @@ def main(stdscr):
             r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)            
 
 def debug_print_tree(tree, i=0):
-    print "  "*i + str(tree)
+    print "  "*i + "< "+str(tree)+" >"
     for c in tree.children:
          debug_print_tree(c, i+1)
          
 curses.wrapper(main)
-#~ tree = importer.import_scad('/home/yuri/Documents/headphone/headphon0.scad')
+#~ tree = importer.import4_scad('/home/yuri/Documents/pscad/headphon0.scad')
 #~ debug_print_tree(tree)
 #~ r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
