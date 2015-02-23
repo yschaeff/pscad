@@ -22,7 +22,7 @@ def canonicalize(t_str, t_type):
     r = re.compile(r"\s+")
     res = r.sub(" ", res)
     ## every comma should be followed by space
-    r = re.compile(r",[^\s]")
+    r = re.compile(r",(?=[^\s])")
     res = r.sub(", ", res)
     return res
 
