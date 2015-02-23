@@ -7,7 +7,16 @@ def import_scad(filename):
     tree = Node("Document Root")
 
     re_comment = re.compile(r"//.*\n")
+    re_whitespace = re.compile(r"\s+")
+    re_assignment = re.compile(r"\s*[$\w]+\s*=[^;\n]+;")
+    re_call = re.compile(r"\s*\w+\(.*\)\s*;")
+    re_func = re.compile(r"\s*[\w\s]+\(.*\)")
+    re_open = re.compile(r"\s*{")
+    re_close = re.compile(r"\s*}")
 
+    ####
+    ## Strip the file of all comments, parsing is *much* easier
+    ## without. Remember the comments and their position in the file
     comments = []
     while True:
         m = re_comment.search(raw)
@@ -15,13 +24,6 @@ def import_scad(filename):
         s = m.group(0)
         raw = raw[:m.start()] + raw[m.end():]
         comments.append((s, m.start()))
-    
-    re_whitespace = re.compile(r"\s+")
-    re_assignment = re.compile(r"\s*[$\w]+\s*=[^;\n]+;")
-    re_call = re.compile(r"\s*\w+\(.*\)\s*;")
-    re_func = re.compile(r"\s*[\w\s]+\(.*\)")
-    re_open = re.compile(r"\s*{")
-    re_close = re.compile(r"\s*}")
 
     regexps = [re_assignment, re_call, re_func, re_open, re_close, re_whitespace, re_comment]
 
