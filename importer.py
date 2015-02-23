@@ -2,17 +2,29 @@ from Datastruct import Node
 import re
 
 def canonicalize(t_str, t_type):
-    #~ regexps = [re_assignment, re_call, re_func, re_open, re_close, re_whitespace, re_comment]
     if t_type == 0:
         r = re.compile(r"\s*([$\w]+)\s*(=)\s*([^;\n]+);")
         m = r.match(t_str)
-        return " ".join(m.groups())
+        res = " ".join(m.groups())
     elif t_type == 1:
         r = re.compile(r"\s*(\w+)\s*(\(.*\))\s*;")
         m = r.match(t_str)
-        return "".join(m.groups())
+        res = "".join(m.groups())
+    elif t_type == 2:
+        r = re.compile(r"\s*(\w+(?:\s+\w+)?)\s*(\(.*\))")
+        m = r.match(t_str)
+        res = "".join(m.groups())
     else:
-        return t_str
+        ## we don't want to process comments further
+        return t_str.strip()
+
+    ## remove duplicate whitespaces
+    r = re.compile(r"\s+")
+    res = r.sub(" ", res)
+    ## every comma should be followed by space
+    r = re.compile(r",[^\s]")
+    res = r.sub(", ", res)
+    return res
 
 
 def import_scad(filename):
@@ -24,7 +36,7 @@ def import_scad(filename):
     re_whitespace = re.compile(r"\s+")
     re_assignment = re.compile(r"\s*[$\w]+\s*=\s*[^;\n]+;")
     re_call = re.compile(r"\s*\w+\s*\(.*\)\s*;")
-    re_func = re.compile(r"\s*[\w\s]+\(.*\)")
+    re_func = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)")
     re_open = re.compile(r"\s*{")
     re_close = re.compile(r"\s*}")
 

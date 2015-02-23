@@ -124,8 +124,8 @@ def main(stdscr):
             while sel_idx < scroll:
                 scroll -= (y//2)
             scroll = max(0, scroll)
-        elif sel_idx-scroll >= y-1:
-            while sel_idx-scroll >= y-1:
+        elif sel_idx-scroll >= y-2:
+            while sel_idx-scroll >= y-2:
                 scroll += y//2
         elif (sel_idx-scroll)+sel_h > y and sel_h<y:
             d = (sel_idx-scroll+sel_h+1) - y
