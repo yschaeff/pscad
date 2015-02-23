@@ -6,6 +6,7 @@ import importer
 from copy import deepcopy
 from undo import Undo
 from pretty import fabulous
+from sys import argv
 
 UNDO_CAP = 100
 F_STAT_CLEAR  = 0
@@ -13,9 +14,10 @@ F_STAT_UNDO   = 1
 F_STAT_EXPORT = 2
 
 # TODO
-# strip ;
 # test modifiers
 # hotkeys for diff etc
+# pasting before of after doc root should work
+# fix fablous for function defs
 
 def usage(win):
     helptext = "yYxXpPgGuU tab/stab (in) [dui trs]"
@@ -103,12 +105,17 @@ def init_colors():
     curses.init_pair(5, curses.COLOR_BLUE,  curses.COLOR_BLACK)
     curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
-def main(stdscr):
+def main(stdscr, infile=None, outfile=None):
     init_colors()
     buffer = None
     undo = Undo(UNDO_CAP)
 
-    tree = Node("Document root")
+    if infile:
+        tree = importer.import_scad(infile)
+        if not tree:
+            raise(Exception("Error importing from file %s"%infile))
+    else:
+        tree = Node("Document root")
     undo.store(tree)
     sel_node = tree
     scroll = 0
@@ -290,15 +297,19 @@ def main(stdscr):
 
         if changes & F_STAT_UNDO:
             undo.store(tree)
-        if changes & F_STAT_EXPORT:
-            r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)            
+        if changes & F_STAT_EXPORT and outfile:
+            r = importer.export_scad(outfile, tree)
 
 def debug_print_tree(tree, i=0):
     print("  "*i + "< "+str(tree)+" >")
     for c in tree.children:
          debug_print_tree(c, i+1)
-         
-curses.wrapper(main)
-#~ tree = importer.import4_scad('/home/yuri/Documents/pscad/headphon0.scad')
-#~ debug_print_tree(tree)
-#~ r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
+
+            
+if __name__ == "__main__":
+    if len(argv) == 1:
+        curses.wrapper(main)
+    if len(argv) == 3:
+        #~ curses.wrapper(main, argv[1], argv[2])
+        tree = importer.import_scad(argv[1])
+        debug_print_tree(tree)

@@ -6,11 +6,11 @@ def canonicalize(t_str, t_type):
         r = re.compile(r"\s*([$\w]+)\s*(=)\s*([^;\n]+);")
         m = r.match(t_str)
         res = " ".join(m.groups())
-    elif t_type == 1:
+    elif t_type == 2:
         r = re.compile(r"\s*(\w+)\s*(\(.*\))\s*;")
         m = r.match(t_str)
         res = "".join(m.groups())
-    elif t_type == 2:
+    elif t_type == 3:
         r = re.compile(r"\s*(\w+(?:\s+\w+)?)\s*(\(.*\))")
         m = r.match(t_str)
         res = "".join(m.groups())
@@ -36,7 +36,8 @@ def import_scad(filename):
     re_whitespace = re.compile(r"\s+")
     re_assignment = re.compile(r"\s*[$\w]+\s*=\s*[^;\n]+;")
     re_call = re.compile(r"\s*\w+\s*\(.*\)\s*;")
-    re_func = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)")
+    re_func = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)\s*=\s*[^;\n]+;")
+    re_bloc = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)")
     re_open = re.compile(r"\s*{")
     re_close = re.compile(r"\s*}")
 
@@ -54,8 +55,8 @@ def import_scad(filename):
     ####
     ## Every single piece of file should be covered by one of these
     ## regular expressions. If not bail out
-    regexps = [re_assignment, re_call, re_func, re_open, re_close, re_whitespace, re_comment]
-    T_ASS = 0; T_CAL = 1; T_FUN = 2; T_OPN = 3; T_CLS = 4; T_WHT = 5; T_COM = 6
+    regexps = [re_assignment, re_func, re_call, re_bloc, re_open, re_close, re_whitespace, re_comment]
+    T_ASS = 0; T_FUN = 1; T_CAL = 2; T_BLC = 3; T_OPN = 4; T_CLS = 5; T_WHT = 6; T_COM = 7
     matches = []
     i = 0
     while i<len(raw):
@@ -76,6 +77,7 @@ def import_scad(filename):
 
                 s = canonicalize(s, mtype)
                 matches.append((s, mtype))
+                print (s.strip(), mtype)
                 break
                 
 
@@ -102,13 +104,13 @@ def import_scad(filename):
                 #~ break
             if p[-1][1] == 0:
                 p.pop()
-        elif t == T_ASS or t == T_CAL:
+        elif t == T_ASS or t == T_CAL or t == T_FUN:
             n = Node(m.strip())
             n.parent = p[-1][0]
             n.parent.children.append(n)
             if p[-1][1] == 0:
                 p.pop()
-        elif t == T_FUN:
+        elif t == T_BLC:
             n = Node(m.strip())
             n.parent = p[-1][0]
             n.parent.children.append(n)
