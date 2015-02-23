@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import curses
 from Datastruct import Node
@@ -294,7 +294,7 @@ def main(stdscr):
             r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)            
 
 def debug_print_tree(tree, i=0):
-    print "  "*i + "< "+str(tree)+" >"
+    print("  "*i + "< "+str(tree)+" >")
     for c in tree.children:
          debug_print_tree(c, i+1)
          

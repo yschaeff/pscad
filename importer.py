@@ -52,14 +52,14 @@ def import_scad(filename):
                 
 
         if not match:
-            print "\"%s\""%raw[i:]
-            print "no match, import error"
+            print("\"%s\""%raw[i:])
+            print("no match, import error")
             return None
 
     p = [[tree, 1]]
     for m,t in matches:
         if not p:
-            print "Error parsing tree"
+            print("Error parsing tree")
             return None
         parent = p[-1][0]
         if t == T_OPN:

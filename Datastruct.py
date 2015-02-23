@@ -11,7 +11,7 @@ class Node():
 
     def fix_descendants(self):
         """The number of descendants"""
-        d = sum(map(lambda c: c.fix_descendants(), self.children))
+        d = sum([c.fix_descendants() for c in self.children])
         d += len(self.children)
         self.descendants = d
         return self.descendants
