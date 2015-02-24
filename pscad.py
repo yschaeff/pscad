@@ -306,11 +306,14 @@ def debug_print_tree(tree, i=0):
 
             
 if __name__ == "__main__":
+    import traceback, sys
     if len(argv) == 1:
         curses.wrapper(main)
     if len(argv) == 3:
-        #~ try:
+        try:
             curses.wrapper(main, argv[1], argv[2])
-        #~ except:
-            #~ tree = importer.import_scad(argv[1])
-            #~ debug_print_tree(tree)
+        except:
+            tree = importer.import_scad(argv[1])
+            debug_print_tree(tree)
+            print()
+            print(traceback.print_exc(file=sys.stdout))

@@ -212,6 +212,17 @@ class Node():
             return next
         return None
 
+    def __iter__(self):
+        self.iter_index = self
+        return self
+
+    def __next__(self):
+        n = self.iter_index.depth_first_walk()
+        if n and n != self.iter_index:
+            self.iter_index = n
+            return n
+        raise StopIteration
+
     def left(self):
         if not self.children:
             return self

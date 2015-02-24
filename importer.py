@@ -29,10 +29,7 @@ def canonicalize(t_str, t_type):
     res = r.sub(", ", res)
     return res
 
-
-def import_scad(filename):
-    f = open(filename)
-    raw = f.read()
+def parse_scad(raw):
     tree = Node("Document Root")
 
     re_comment = re.compile(r"//.*\n")
@@ -75,7 +72,7 @@ def import_scad(filename):
                 ##
                 while comments and i > comments[0][1]:
                     c,p = comments.pop(0)
-                    c = canonicalize(c, T_COM)
+                    #~ c = canonicalize(c, T_COM)
                     matches.append((c, T_COM))
 
                 ####
@@ -97,9 +94,9 @@ def import_scad(filename):
                                     
                         
                 i += len(s)
-                s = canonicalize(s, mtype)
+                #~ s = canonicalize(s, mtype)
                 matches.append((s, mtype))
-                print (s.strip(), mtype)
+                #~ print (s.strip(), mtype)
                 break
                 
 
@@ -127,29 +124,46 @@ def import_scad(filename):
             if p[-1][1] == 0:
                 p.pop()
         elif t == T_ASS or t == T_CAL or t == T_FUN:
-            n = Node(m.strip())
+            n = Node(m)
             n.parent = p[-1][0]
             n.parent.children.append(n)
             if p[-1][1] == 0:
                 p.pop()
         elif t == T_BLC:
-            n = Node(m.strip())
+            n = Node(m)
             n.parent = p[-1][0]
             n.parent.children.append(n)
             if p[-1][1] == 0:
                 p.pop()
             p.append([n, 0])
         elif t == T_COM:
-            n = Node(m.strip())
+            n = Node(m)
             n.parent = p[-1][0]
             n.parent.children.append(n)
         else:
             #whitespace, ignore
             pass
             
-    tree.fix_descendants()
     return tree
 
+def cleanup(text):
+    r = re.compile(r"\s+")
+    text, n = r.subn(" ", text)
+    return text.strip()
+
+def import_scad(filename):
+    f = open(filename)
+    raw = f.read()
+    f.close()
+    tree = parse_scad(raw)
+
+    for node in tree:
+        c = node.content
+        node.content = cleanup(c)
+        print(node.content)
+
+    tree.fix_descendants()
+    return tree
 
 def export_scad(filename, tree):
     if not tree:
@@ -161,7 +175,6 @@ def export_scad(filename, tree):
     while n and n != tree:
         while parent_stack and parent_stack[-1] != n.parent:
             l -= 1
-            #~ print "  "*l + "}"
             f.write("  "*l + "}\n")
             parent_stack.pop()
         prefix =  "  "*l + str(n)

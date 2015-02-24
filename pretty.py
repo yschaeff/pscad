@@ -2,13 +2,18 @@ import curses
 
 def addstr(win, y, x, text, style=0):
     my, mx = win.getmaxyx()
+
+    p = text.find("\n")
+    if p != -1:
+        text = text[:p]
+    
     if y < 0 or y >= my or x >= mx or x+len(text) <= 0:
         return
     if x < 0:
         text = text[-x:]
         x = 0
     if x+len(text) >= mx:
-        text[:mx-x]
+        text = text[:mx-x-1]
     win.addstr(y, x, text, style)
 
 def splitargs(s):
