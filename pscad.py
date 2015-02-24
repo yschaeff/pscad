@@ -5,7 +5,7 @@ from Datastruct import Node
 import importer
 from copy import deepcopy
 from undo import Undo
-from pretty import fabulous
+from pretty import fabulous, addstr
 from sys import argv
 
 UNDO_CAP = 100
@@ -22,8 +22,8 @@ F_STAT_EXPORT = 2
 def usage(win):
     helptext = "yYxXpPgGuU tab/stab (in) [dui trs]"
     my, mx = win.getmaxyx()
-    win.addnstr(my-2, mx-len(helptext)-1, " ", mx-1)
-    win.addnstr(my-2, mx-len(helptext), helptext, mx-1, curses.A_REVERSE)
+    addstr(win, my-2, mx-len(helptext)-1, " ")
+    addstr(win, my-2, mx-len(helptext), helptext, curses.A_REVERSE)
 
 def status(win, text=None):
     global status_string
@@ -36,7 +36,7 @@ def status(win, text=None):
     my, mx = win.getmaxyx()
     win.move(my-1, 0)
     win.clrtoeol()
-    win.addnstr(my-1, 0, status_string, mx-1, curses.A_REVERSE)
+    addstr(win, my-1, 0, status_string, curses.A_REVERSE)
 
 def print_buffer(win, buffer):
     if not buffer:
@@ -51,7 +51,7 @@ def print_buffer(win, buffer):
     my, mx = win.getmaxyx()
     win.move(my-2, 0)
     win.clrtoeol()
-    win.addnstr(my-2, 0, text, mx-1, curses.A_REVERSE)
+    addstr(win, my-2, 0, text, curses.A_REVERSE)
     
     
 
@@ -62,10 +62,9 @@ def render(node, pwin, sel_node, y=0, x=0):
 
     if node == sel_node:
         highlight = curses.A_BOLD|curses.color_pair(3)
-        pwin.addnstr(y, x, " "*mx, mx-x-1, highlight)
-        pwin.addnstr(y, x, str(node), mx-x-1, highlight)
+        addstr(pwin, y, x, " "*mx, highlight)
+        addstr(pwin, y, x, str(node), highlight)
     else:
-        #~ pwin.addnstr(y, x, str(node), mx-x-1, highlight)
         fabulous(pwin, y,x, mx, str(node.content))
 
     h = 1;
@@ -74,7 +73,7 @@ def render(node, pwin, sel_node, y=0, x=0):
             break
         ch = render(child, pwin, sel_node, y+h, x+INDENT)
         for j in range(ch):
-            pwin.addnstr(y+h+j, x, " "*INDENT, mx-x-1, highlight)
+            addstr(pwin, y+h+j, x, " "*INDENT, highlight)
         h += ch
     return h
 

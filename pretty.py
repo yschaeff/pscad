@@ -1,5 +1,16 @@
 import curses
 
+def addstr(win, y, x, text, style=0):
+    my, mx = win.getmaxyx()
+    if y < 0 or y >= my or x >= mx or x+len(text) <= 0:
+        return
+    if x < 0:
+        text = text[-x:]
+        x = 0
+    if x+len(text) >= mx:
+        text[:mx-x]
+    win.addstr(y, x, text, style)
+
 def splitargs(s):
     p1 = s.find('(')
     p2 = s.rfind(')')
@@ -26,28 +37,28 @@ def fabulous(win, y, x, mx, s):
     name = None
 
     if s.startswith("//"):
-        win.addnstr(y, x, s, mx-x-1, color_comment)
+        addstr(win, y, x, s, color_comment)
         return
     s, args = splitargs(s)
     if args == None:
-        win.addnstr(y, x, s, mx-x-1, color_default)
+        addstr(win, y, x, s, color_default)
         return
     p = 0
     l = s.find(" ")
     if l != -1:
         keyword = s[:l]
-        win.addnstr(y, x, keyword, mx-x-1, color_keyword)
+        addstr(win, y, x, keyword, color_keyword)
         p += len(keyword)+1
         name = s[l:].strip()
     else:
         name = s
 
-    win.addnstr(y, x+p, name, mx-x-1, color_name)
+    addstr(win, y, x+p, name, color_name)
     p+=len(name)
     if args != None:
-        win.addnstr(y, x+p, "(", mx-x-1, color_braces)
+        addstr(win, y, x+p, "(", color_braces)
         p+=1
-        win.addnstr(y, x+p, "%s"%args, mx-x-1, color_default)
+        addstr(win, y, x+p, "%s"%args, color_default)
         p+=len(args)
-        win.addnstr(y, x+p, ")", mx-x-1, color_braces)
+        addstr(win, y, x+p, ")", color_braces)
 
