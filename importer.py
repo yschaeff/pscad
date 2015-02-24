@@ -10,14 +10,17 @@ def canonicalize(t_str, t_type):
         r = re.compile(r"\s*(\w+)\s*(\(.*\))\s*;")
         m = r.match(t_str)
         res = "".join(m.groups())
-    elif t_type == 3:
-        r = re.compile(r"\s*(\w+(?:\s+\w+)?)\s*(\(.*\))")
-        m = r.match(t_str)
-        res = "".join(m.groups())
+    #~ elif t_type == 3:
+        #~ r = re.compile(r"\s*(\w+(?:\s+\w+)?)\s*(\(.*\))")
+        #~ m = r.match(t_str)
+        #~ res = "".join(m.groups())
     else:
         ## we don't want to process comments further
-        return t_str.strip()
+        res = t_str.strip()
 
+    ## remove duplicate whitespaces
+    r = re.compile(r"\n")
+    res = r.sub(" ", res)
     ## remove duplicate whitespaces
     r = re.compile(r"\s+")
     res = r.sub(" ", res)
@@ -37,7 +40,7 @@ def import_scad(filename):
     re_assignment = re.compile(r"\s*[$\w]+\s*=\s*[^;\n]+;")
     re_call = re.compile(r"\s*\w+\s*\(.*\)\s*;")
     re_func = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)\s*=\s*[^;\n]+;")
-    re_bloc = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)")
+    re_bloc = re.compile(r"\s*\w+(?:\s+\w+)?\s*\([^;\)]*\)")
     re_open = re.compile(r"\s*{")
     re_close = re.compile(r"\s*}")
 
@@ -65,7 +68,7 @@ def import_scad(filename):
             m = r.match(raw, i)
             if m:
                 s = m.group(0)
-                i += len(s)
+                #~ i += len(s)
                 match = True
 
                 ####
@@ -75,6 +78,25 @@ def import_scad(filename):
                     c = canonicalize(c, T_COM)
                     matches.append((c, T_COM))
 
+                ####
+                ## Filthy hack. regexp is to greedy. This catches:
+                ## "name(...) name(...);"
+                if mtype == T_CAL:
+                    c = 0
+                    for idx, ch in enumerate(s):
+                        if ch == "(":
+                            c += 1
+                        elif ch == ")":
+                            c -= 1
+                            if c < 0:
+                                raise(Exception("unbalanced braces"))
+                            elif c == 0:
+                                if not re.match(r"\s*;\s*", s[idx+1:]):
+                                    s = s[:idx+1]
+                                    mtype = T_BLC
+                                    
+                        
+                i += len(s)
                 s = canonicalize(s, mtype)
                 matches.append((s, mtype))
                 print (s.strip(), mtype)

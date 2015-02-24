@@ -310,6 +310,8 @@ if __name__ == "__main__":
     if len(argv) == 1:
         curses.wrapper(main)
     if len(argv) == 3:
-        #~ curses.wrapper(main, argv[1], argv[2])
-        tree = importer.import_scad(argv[1])
-        debug_print_tree(tree)
+        #~ try:
+            curses.wrapper(main, argv[1], argv[2])
+        #~ except:
+            #~ tree = importer.import_scad(argv[1])
+            #~ debug_print_tree(tree)
