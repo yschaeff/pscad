@@ -14,12 +14,11 @@ F_STAT_UNDO   = 1
 F_STAT_EXPORT = 2
 
 # TODO
-# test modifiers
 # hotkeys for diff etc
 # fix fablous for function defs
 
 def usage(win):
-    helptext = "yYxXpPgGuU tab/stab (in) [dui trs]"
+    helptext = "yYxXpPgGuU *!#% (in) [dui trs]"
     my, mx = win.getmaxyx()
     addstr(win, my-2, mx-len(helptext)-1, " ")
     addstr(win, my-2, mx-len(helptext), helptext, curses.A_REVERSE)
@@ -51,8 +50,6 @@ def print_buffer(win, buffer):
     win.move(my-2, 0)
     win.clrtoeol()
     addstr(win, my-2, 0, text, curses.A_REVERSE)
-    
-    
 
 def render(node, pwin, sel_node, y=0, x=0):
     highlight = 0
@@ -101,6 +98,19 @@ def paste_after(sel_node, buffer, stdscr):
     else:
         root = deepcopy(buffer)
         sel_node.merge(0, root)
+
+def toggle_modifier(node, char):
+    mods = "*!#%"
+    if char not in mods:
+        return
+    t = node.content
+    for c in t:
+        if c not in mods:
+            node.content = char+t
+            return
+        elif c == char:
+             node.content = t.replace(char, "", 1)
+             return
 
 def init_colors():
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE) #status
@@ -255,6 +265,28 @@ def main(stdscr, infile=None, outfile=None):
                 sel_node = tree
                 changes = F_STAT_EXPORT
                 sel_node = tree.node_at_offset(i)
+
+        elif c == ord('!'):
+            if sel_node:
+                toggle_modifier(sel_node, "!")
+                status(stdscr, "Toggled exclusive modifier")
+                changes = F_STAT_EXPORT|F_STAT_UNDO
+        elif c == ord('%'):
+            if sel_node:
+                toggle_modifier(sel_node, "%")
+                status(stdscr, "Toggled transparant modifier")
+                changes = F_STAT_EXPORT|F_STAT_UNDO
+        elif c == ord('#'):
+            if sel_node:
+                toggle_modifier(sel_node, "#")
+                status(stdscr, "Toggled highlight modifier")
+                changes = F_STAT_EXPORT|F_STAT_UNDO
+        elif c == ord('*'):
+            if sel_node:
+                toggle_modifier(sel_node, "*")
+                status(stdscr, "Toggled disable modifier")
+                changes = F_STAT_EXPORT|F_STAT_UNDO
+
 
         elif c == curses.KEY_UP:
             if sel_node:
