@@ -1,45 +1,10 @@
 from Datastruct import Node
 import re
 
-def canonicalize(t_str, t_type):
-    if t_type == 0:
-        r = re.compile(r"\s*([$\w]+)\s*(=)\s*([^;\n]+);")
-        m = r.match(t_str)
-        res = " ".join(m.groups())
-    elif t_type == 2:
-        r = re.compile(r"\s*(\w+)\s*(\(.*\))\s*;")
-        m = r.match(t_str)
-        res = "".join(m.groups())
-    #~ elif t_type == 3:
-        #~ r = re.compile(r"\s*(\w+(?:\s+\w+)?)\s*(\(.*\))")
-        #~ m = r.match(t_str)
-        #~ res = "".join(m.groups())
-    else:
-        ## we don't want to process comments further
-        res = t_str.strip()
-
-    ## remove duplicate whitespaces
-    r = re.compile(r"\n")
-    res = r.sub(" ", res)
-    ## remove duplicate whitespaces
-    r = re.compile(r"\s+")
-    res = r.sub(" ", res)
-    ## every comma should be followed by space
-    r = re.compile(r",(?=[^\s])")
-    res = r.sub(", ", res)
-    return res
-
 def parse_scad(raw):
     tree = Node("Document Root")
 
     re_comment = re.compile(r"//.*\n")
-    re_whitespace = re.compile(r"\s+")
-    re_assignment = re.compile(r"\s*[$\w]+\s*=\s*[^;\n]+;")
-    re_call = re.compile(r"\s*\w+\s*\(.*\)\s*;")
-    re_func = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)\s*=\s*[^;\n]+;")
-    re_bloc = re.compile(r"\s*\w+(?:\s+\w+)?\s*\([^;\)]*\)")
-    re_open = re.compile(r"\s*{")
-    re_close = re.compile(r"\s*}")
 
     ####
     ## Strip the file of all comments, parsing is *much* easier
@@ -52,117 +17,99 @@ def parse_scad(raw):
         raw = raw[:m.start()] +" "+ raw[m.end():]
         comments.append((s, m.start()))
 
+    T_OPEN, T_CLOSE, T_TERM, T_STAT, T_COMM = range(5)
+
     ####
-    ## Every single piece of file should be covered by one of these
-    ## regular expressions. If not bail out
-    regexps = [re_assignment, re_func, re_call, re_bloc, re_open, re_close, re_whitespace, re_comment]
-    T_ASS = 0; T_FUN = 1; T_CAL = 2; T_BLC = 3; T_OPN = 4; T_CLS = 5; T_WHT = 6; T_COM = 7
-    matches = []
-    i = 0
-    while i<len(raw):
-        match = False
-        for mtype, r in enumerate(regexps):
-            m = r.match(raw, i)
-            if m:
-                s = m.group(0)
-                #~ i += len(s)
-                match = True
+    ## Parse document, split in logical units
+    m = []
+    i = 0; j = 0
+    c = 0
+    gobble = False
+    while i < len(raw) and j < len(raw):
+        while comments and j > comments[0][1]:
+            comment,_ = comments.pop(0)
+            m.append((comment, T_COMM))
 
-                ####
-                ##
-                while comments and i > comments[0][1]:
-                    c,p = comments.pop(0)
-                    #~ c = canonicalize(c, T_COM)
-                    matches.append((c, T_COM))
-
-                ####
-                ## Filthy hack. regexp is to greedy. This catches:
-                ## "name(...) name(...);"
-                if mtype == T_CAL:
-                    c = 0
-                    for idx, ch in enumerate(s):
-                        if ch == "(":
-                            c += 1
-                        elif ch == ")":
-                            c -= 1
-                            if c < 0:
-                                raise(Exception("unbalanced braces"))
-                            elif c == 0:
-                                if not re.match(r"\s*;\s*", s[idx+1:]):
-                                    s = s[:idx+1]
-                                    mtype = T_BLC
-                                    
-                        
-                i += len(s)
-                #~ s = canonicalize(s, mtype)
-                matches.append((s, mtype))
-                #~ print (s.strip(), mtype)
-                break
-                
-
-        if not match:
-            print("\"%s\""%raw[i:])
-            print("no match, import error")
-            return None
-
-
-    p = [[tree, 1]]
-    for m,t in matches:
-        if not p:
-            print("Error parsing tree")
-            return None
-        parent = p[-1][0]
-        if t == T_OPN:
-            p[-1][1] += 1
-        elif t == T_CLS:
-            p[-1][1] -= 1
-            assert(p[-1][1] >= 0)
-            #~ if (p[-1][1] < 0):
-                #~ for x in p:
-                    #~ print "DBG: " + str(x[0])
-                #~ break
-            if p[-1][1] == 0:
-                p.pop()
-        elif t == T_ASS or t == T_CAL or t == T_FUN:
-            n = Node(m)
-            n.parent = p[-1][0]
-            n.parent.children.append(n)
-            if p[-1][1] == 0:
-                p.pop()
-        elif t == T_BLC:
-            n = Node(m)
-            n.parent = p[-1][0]
-            n.parent.children.append(n)
-            if p[-1][1] == 0:
-                p.pop()
-            p.append([n, 0])
-        elif t == T_COM:
-            n = Node(m)
-            n.parent = p[-1][0]
-            n.parent.children.append(n)
-        else:
-            #whitespace, ignore
+        ch = raw[j]
+        #~ print(ch, end=""),
+        if ch == "=" and c == 0:
+            #gobble all the way to ;
+            gobble = True
+        elif ch == ";":
+            if c: raise(Exception("Unclosed bracket"))
+            if gobble:
+                m.append((raw[i:j], T_STAT))
+                m.append((raw[j:j+1], T_TERM))
+                gobble = False
+            else:
+                m.append((raw[i:j+1], T_TERM))
+            i = j+1
+        elif ch == "{":
+            if c: raise(Exception("Unclosed bracket"))
+            m.append((raw[i:j+1], T_OPEN))
+            i = j+1
+        elif ch == "}":
+            if c: raise(Exception("Unclosed bracket"))
+            m.append((raw[j:j+1], T_CLOSE))
+            i = j+1
+        elif gobble:
             pass
+        elif ch == "(":
+            c += 1
+        elif ch == ")":
+            c -= 1
+            r= re.compile(r"\s*=")
+            if c == 0:
+                if r.match(raw[j+1:]):
+                    pass
+                else:
+                    m.append((raw[i:j+1], T_STAT))
+                    i = j+1
+        j += 1
+    if c:
+        raise(Exception("Extra close bracket"))
+
+    tree = Node("Document Root")
+    s = [[tree, 0]]
+    for i,t in m:
+        #~ print("- "+str(i).strip())
+        #~ print(len(s))
+        if t == T_TERM:
+            while s[-1][1] == 0 and len(s) > 1:
+                s.pop()
+            continue
+        elif t == T_OPEN:
+            s[-1][1] += 1
+        elif t == T_CLOSE:
+            s[-1][1] -= 1
+            while s and s[-1][1] == 0 and len(s) > 1:
+                s.pop()
+        elif t == T_STAT:
+            n = Node(i)
+            n.parent = s[-1][0]
+            n.parent.children.append(n)
+            s.append([n, 0])
+        elif t == T_COMM:
+            n = Node(i)
+            n.parent = s[-1][0]
+            n.parent.children.append(n)
             
     return tree
 
-def cleanup(text):
-    r = re.compile(r"\s+")
-    text, n = r.subn(" ", text)
-    return text.strip()
-
 def import_scad(filename):
+    r = re.compile(r"\s+")
+
     f = open(filename)
     raw = f.read()
     f.close()
     tree = parse_scad(raw)
 
-    for node in tree:
-        c = node.content
-        node.content = cleanup(c)
-        print(node.content)
+    if tree:
+        for node in tree:
+            c, _ = r.subn(" ", node.content)
+            node.content = c.strip()
+        tree.fix_descendants()
 
-    tree.fix_descendants()
     return tree
 
 def export_scad(filename, tree):

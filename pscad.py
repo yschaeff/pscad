@@ -313,7 +313,10 @@ if __name__ == "__main__":
         try:
             curses.wrapper(main, argv[1], argv[2])
         except:
-            tree = importer.import_scad(argv[1])
-            debug_print_tree(tree)
+            #~ tree = importer.import_scad2(argv[1])
+            #~ if tree: debug_print_tree(tree)
             print()
             print(traceback.print_exc(file=sys.stdout))
+    if len(argv) == 2:
+            tree = importer.import_scad(argv[1])
+            if tree: debug_print_tree(tree)
