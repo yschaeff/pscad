@@ -112,7 +112,7 @@ def import_scad(filename):
 
     return tree
 
-def export_scad(filename, tree):
+def export_scad(filename, tree, compact = False):
     if not tree:
         return 1
     f = open(filename, 'w')
@@ -121,13 +121,17 @@ def export_scad(filename, tree):
     l = 0
     while n and n != tree:
         while parent_stack and parent_stack[-1] != n.parent:
-            l -= 1
-            f.write("  "*l + "}\n")
-            parent_stack.pop()
+            p = parent_stack.pop()
+            if not compact or len(p.children) > 1:
+                l -= 1
+                f.write("  "*l + "}\n")
         prefix =  "  "*l + str(n)
         if n.children:
-            f.write("%s {\n"%prefix)
-            l += 1
+            if compact and len(n.children) == 1:
+                f.write("%s "%prefix)
+            else:
+                f.write("%s {\n"%prefix)
+                l += 1
             parent_stack.append(n)
         else:
             f.write("%s;\n"%prefix)
@@ -135,6 +139,8 @@ def export_scad(filename, tree):
         n = n.depth_first_walk()
     while parent_stack:
         n = parent_stack.pop()
+        if compact and len(n.children) == 1:
+            continue
         l -= 1
         f.write("  "*l + "}\n")
     return 0
