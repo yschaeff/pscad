@@ -16,7 +16,6 @@ F_STAT_EXPORT = 2
 # TODO
 # test modifiers
 # hotkeys for diff etc
-# pasting before of after doc root should work
 # fix fablous for function defs
 
 def usage(win):
@@ -86,6 +85,9 @@ def paste_before(sel_node, buffer, stdscr):
         i = sel_node.parent.children.index(sel_node)
         root = deepcopy(buffer)
         sel_node.parent.merge(i, root)
+    else:
+        root = deepcopy(buffer)
+        sel_node.merge(0, root)
 
 def paste_after(sel_node, buffer, stdscr):
     if not buffer:
@@ -96,6 +98,9 @@ def paste_after(sel_node, buffer, stdscr):
         i = sel_node.parent.children.index(sel_node)+1
         root = deepcopy(buffer)
         sel_node.parent.merge(i, root)
+    else:
+        root = deepcopy(buffer)
+        sel_node.merge(0, root)
 
 def init_colors():
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE) #status
