@@ -21,7 +21,7 @@ def usage(win):
     helptext = "yYxXpPgGuU *!#% (in) [dui trs]"
     my, mx = win.getmaxyx()
     addstr(win, my-2, mx-len(helptext)-1, " ")
-    addstr(win, my-2, mx-len(helptext), helptext, curses.A_REVERSE)
+    addstr(win, my-2, mx-len(helptext)-1, helptext, curses.A_REVERSE)
 
 def status(win, text=None):
     global status_string
