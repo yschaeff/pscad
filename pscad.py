@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import curses
+import urwid
 from Datastruct import Node
 import importer
 from copy import deepcopy
@@ -342,7 +343,7 @@ def debug_print_tree(tree, i=0):
          debug_print_tree(c, i+1)
 
             
-if __name__ == "__main__":
+if 0 and __name__ == "__main__":
     import traceback, sys
     if len(argv) == 1:
         curses.wrapper(main)
@@ -357,3 +358,115 @@ if __name__ == "__main__":
     if len(argv) == 2:
             tree = importer.import_scad(argv[1])
             if tree: debug_print_tree(tree)
+
+
+def show_or_exit(key):
+    if key in ('q', 'Q'):
+        raise urwid.ExitMainLoop()
+    
+class SelectText(urwid.Widget):
+
+    SPACE_PER_INDENT = 2
+
+    def __init__(self, node):
+        super(urwid.Widget, self).__init__()
+        self.edit = urwid.Edit("", node.content)
+        self.text = urwid.Text(node.content)
+        self.showedit = 0
+        self.node = node
+        self.indent = node.depth()
+
+    def rows(self, size, focus=False):
+        return 1
+
+    def sizing(self):
+        if self.showedit:
+            return self.edit.sizing()
+        return self.text.sizing()
+
+    def selectable(self):
+        return True
+
+    def get_cursor_coords(self, size):
+        if self.showedit:
+            x,y = self.edit.get_cursor_coords(size)
+            return (x + self.indent*SelectText.SPACE_PER_INDENT, y)
+        return None
+
+    def keypress(self, size, key):
+        if key == 'enter':
+            self.showedit ^= 1
+            self._invalidate() # mark widget as changed
+            return None
+        if self.showedit:
+            r = self.edit.keypress(size, key)
+            self.text.set_text(self.edit.get_edit_text())
+            return r
+        return key
+
+    def padded_render(self, size, focus, widget):
+        (maxcol, ) = size
+        indent = self.indent*SelectText.SPACE_PER_INDENT
+        indent_canvas = urwid.SolidCanvas(" ", indent, 1)
+        if type(widget) == urwid.Edit:
+            map2 = urwid.AttrMap(widget, 'edit')
+        elif focus:
+            map2 = urwid.AttrMap(widget, 'select')
+        else:
+            map2 = urwid.AttrMap(widget, 'default')
+            
+        canvas = map2.render((maxcol-indent,), focus)
+        return urwid.CanvasJoin([(indent_canvas, 0, False, indent), (canvas, 1, True, maxcol-indent)])
+
+    def render(self, size, focus=False):
+        if self.showedit:
+            return self.padded_render(size, focus, self.edit)
+        return self.padded_render(size, focus, self.text)
+
+class TreeListBox(urwid.ListBox):
+    def __init__(self, tree):
+        self.tree = tree
+        body = urwid.SimpleFocusListWalker([])
+        self.update_tree = True
+        self.editing = False
+        super(TreeListBox, self).__init__(body)
+
+    def render(self, size, focus=False):
+        if self.update_tree and not self.editing:
+            self.update_tree = False
+            tree_text = []
+            for node in self.tree:
+                t = SelectText(node)
+                tree_text.append(t)
+            try:
+                pos = self.focus_position
+            except:
+                pos = 0
+            self.body.clear()
+            self.body.extend(tree_text)
+            self.focus_position = pos
+        
+        canvas = super(TreeListBox, self).render(size, focus)
+        return canvas
+
+    def keypress(self, size, key):
+        key = super(TreeListBox, self).keypress(size, key)
+        if key == 'esc':
+            for n in self.body:
+                if n.showedit:
+                    n.showedit = 0
+                    n._invalidate()
+            return None
+        return key
+
+palette = [
+    ('default', 'white', ''),
+    ('edit', 'white', 'dark red'),
+    ('select', 'white', 'dark blue'),
+    ('bg', 'white', ''),]
+
+tree = importer.import_scad(argv[1])
+tree_list = TreeListBox(tree)
+map2 = urwid.AttrMap(tree_list, 'bg')
+main = urwid.MainLoop(map2, palette, unhandled_input=show_or_exit)
+main.run()

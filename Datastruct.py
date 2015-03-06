@@ -9,6 +9,12 @@ class Node():
         self.children = []
         self.descendants = 0
 
+    def depth(self):
+        """depth in tree of this node. root is at depth 0"""
+        if not self.parent:
+            return 0
+        return self.parent.depth()+1
+
     def fix_descendants(self):
         """The number of descendants"""
         d = sum([c.fix_descendants() for c in self.children])
@@ -213,10 +219,14 @@ class Node():
         return None
 
     def __iter__(self):
+        self.__start_iter = True
         self.iter_index = self
         return self
 
     def __next__(self):
+        if self.__start_iter:
+            self.__start_iter = False
+            return self.iter_index
         n = self.iter_index.depth_first_walk()
         if n and n != self.iter_index:
             self.iter_index = n
