@@ -372,6 +372,10 @@ class SelectText(urwid.Widget):
         super(urwid.Widget, self).__init__()
         self.edit = urwid.Edit("", node.content)
         self.text = urwid.Text(node.content)
+        # do not wrap
+        self.text.set_layout('left', 'clip')
+        self.edit.set_layout('left', 'clip')
+        key = urwid.connect_signal(self.edit, 'change', SelectText.handler, user_args=[self])
         self.showedit = 0
         self.node = node
         self.indent = node.depth()
@@ -387,6 +391,9 @@ class SelectText(urwid.Widget):
     def selectable(self):
         return True
 
+    def handler(self, widget, newtext):
+        self.text.set_text(newtext)
+
     def get_cursor_coords(self, size):
         if self.showedit:
             x,y = self.edit.get_cursor_coords(size)
@@ -399,9 +406,7 @@ class SelectText(urwid.Widget):
             self._invalidate() # mark widget as changed
             return None
         if self.showedit:
-            r = self.edit.keypress(size, key)
-            self.text.set_text(self.edit.get_edit_text())
-            return r
+            return self.edit.keypress(size, key)
         return key
 
     def padded_render(self, size, focus, widget):
@@ -415,8 +420,8 @@ class SelectText(urwid.Widget):
         else:
             map2 = urwid.AttrMap(widget, 'default')
             
-        canvas = map2.render((maxcol-indent,), focus)
-        return urwid.CanvasJoin([(indent_canvas, 0, False, indent), (canvas, 1, True, maxcol-indent)])
+        canvas = map2.render((maxcol-indent, ), focus)
+        return urwid.CanvasJoin([(indent_canvas, None, False, indent), (canvas, 1, True, maxcol-indent)])
 
     def render(self, size, focus=False):
         if self.showedit:
@@ -463,10 +468,17 @@ palette = [
     ('default', 'white', ''),
     ('edit', 'white', 'dark red'),
     ('select', 'white', 'dark blue'),
+    ('status', 'black', 'white'),
     ('bg', 'white', ''),]
 
 tree = importer.import_scad(argv[1])
 tree_list = TreeListBox(tree)
-map2 = urwid.AttrMap(tree_list, 'bg')
-main = urwid.MainLoop(map2, palette, unhandled_input=show_or_exit)
+body = urwid.AttrMap(tree_list, 'bg')
+
+status = urwid.Text("Status line")
+footer = urwid.AttrMap(status, 'status')
+
+frame = urwid.Frame(body, footer=footer, focus_part='body')
+
+main = urwid.MainLoop(frame, palette, unhandled_input=show_or_exit)
 main.run()
