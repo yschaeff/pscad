@@ -366,8 +366,6 @@ def show_or_exit(key):
     
 class SelectText(urwid.Widget):
 
-    SPACE_PER_INDENT = 2
-
     def __init__(self, node):
         super(urwid.Widget, self).__init__()
         self.edit = urwid.Edit("", node.content)
@@ -396,8 +394,7 @@ class SelectText(urwid.Widget):
 
     def get_cursor_coords(self, size):
         if self.showedit:
-            x,y = self.edit.get_cursor_coords(size)
-            return (x + self.indent*SelectText.SPACE_PER_INDENT, y)
+            return self.edit.get_cursor_coords(size)
         return None
 
     def keypress(self, size, key):
@@ -409,31 +406,22 @@ class SelectText(urwid.Widget):
             return self.edit.keypress(size, key)
         return key
 
-    def padded_render(self, size, focus, widget):
-        (maxcol, ) = size
-        indent = self.indent*SelectText.SPACE_PER_INDENT
-        indent_canvas = urwid.SolidCanvas(" ", indent, 1)
-        if type(widget) == urwid.Edit:
-            map2 = urwid.AttrMap(widget, 'edit')
-        elif focus:
-            map2 = urwid.AttrMap(widget, 'select')
-        else:
-            map2 = urwid.AttrMap(widget, 'default')
-            
-        canvas = map2.render((maxcol-indent, ), focus)
-        return urwid.CanvasJoin([(indent_canvas, None, False, indent), (canvas, 1, True, maxcol-indent)])
-
     def render(self, size, focus=False):
         if self.showedit:
-            return self.padded_render(size, focus, self.edit)
-        return self.padded_render(size, focus, self.text)
+            map2 = urwid.AttrMap(self.edit, 'edit')
+        elif focus:
+            map2 = urwid.AttrMap(self.text, 'select')
+        else:
+            map2 = urwid.AttrMap(self.text, 'default')
+        return map2.render(size, focus)
 
 class TreeListBox(urwid.ListBox):
-    def __init__(self, tree):
+    def __init__(self, tree, indent_width):
         self.tree = tree
         body = urwid.SimpleFocusListWalker([])
         self.update_tree = True
         self.editing = False
+        self.indent = indent_width;
         super(TreeListBox, self).__init__(body)
 
     def render(self, size, focus=False):
@@ -442,7 +430,8 @@ class TreeListBox(urwid.ListBox):
             tree_text = []
             for node in self.tree:
                 t = SelectText(node)
-                tree_text.append(t)
+                p = urwid.Padding(t, align='left', width='pack', min_width=None, left=node.depth()*self.indent)
+                tree_text.append(p)
             try:
                 pos = self.focus_position
             except:
@@ -458,9 +447,10 @@ class TreeListBox(urwid.ListBox):
         key = super(TreeListBox, self).keypress(size, key)
         if key == 'esc':
             for n in self.body:
-                if n.showedit:
-                    n.showedit = 0
-                    n._invalidate()
+                w = n._original_widget
+                if w.showedit:
+                    w.showedit = 0
+                    w._invalidate()
             return None
         return key
 
@@ -470,9 +460,10 @@ palette = [
     ('select', 'white', 'dark blue'),
     ('status', 'black', 'white'),
     ('bg', 'white', ''),]
+SPACE_PER_INDENT = 4
 
 tree = importer.import_scad(argv[1])
-tree_list = TreeListBox(tree)
+tree_list = TreeListBox(tree, SPACE_PER_INDENT)
 body = urwid.AttrMap(tree_list, 'bg')
 
 status = urwid.Text("Status line")
