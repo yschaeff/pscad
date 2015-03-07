@@ -11,7 +11,7 @@ from pretty import fabulous, addstr
 
 UNDO_CAP = 1000
 SPACE_PER_INDENT = 4
-HELP_STRING = "yYxXpPgGzZ *!#%/ duitrs"
+HELP_STRING = "yYxXpPgGzZaA *!#%/ dDuUiItTrRsS"
 
 palette = [
     ('default', 'white', ''),
@@ -112,17 +112,17 @@ class SelectText(urwid.Widget):
             self.node.cling()
         elif key == 'shift tab':    ## Be parents sibling
             self.node.decling()
-        elif key == 'p':            ## Be next sibling
+        elif key == 'P':            ## Be next sibling
             self.node.merge_after(self.buf.load())
-        elif key == 'P':            ## Be previous sibling
+        elif key == 'p':            ## Be previous sibling
             self.node.merge_before(self.buf.load())
-        elif key == 'y':            ## Cut node, transfer children to parent
+        elif key == 'Y':            ## Cut node, transfer children to parent
             self.buf.store(self.node.detach())
-        elif key == 'Y':            ## Cut subtree
+        elif key == 'y':            ## Cut subtree
             self.buf.store(self.node.split())
-        elif key == 'x':            ## Delete node, transfer children to parent
+        elif key == 'X':            ## Delete node, transfer children to parent
             self.node.detach()
-        elif key == 'X':            ## Delete subtree
+        elif key == 'x':            ## Delete subtree
             self.node.split()
         elif key == '*':
             self.toggle_modifier("*")
@@ -134,6 +134,34 @@ class SelectText(urwid.Widget):
             self.toggle_modifier("%")
         elif key == '/':
             self.toggle_comment()
+        elif key == 'd':
+            self.node.merge_outer(Node("difference()"))
+        elif key == 'D':
+            self.node.merge_inner(Node("difference()"))
+        elif key == 'u':
+            self.node.merge_outer(Node("union()"))
+        elif key == 'U':
+            self.node.merge_inner(Node("union()"))
+        elif key == 'i':
+            self.node.merge_outer(Node("intersection()"))
+        elif key == 'I':
+            self.node.merge_inner(Node("intersection()"))
+        elif key == 't':
+            self.node.merge_outer(Node("translate([0, 0, 0])"))
+        elif key == 'T':
+            self.node.merge_inner(Node("translate([0, 0, 0])"))
+        elif key == 'r':
+            self.node.merge_outer(Node("rotate([0, 0, 0])"))
+        elif key == 'R':
+            self.node.merge_inner(Node("rotate([0, 0, 0])"))
+        elif key == 's':
+            self.node.merge_outer(Node("scale([0, 0, 0])"))
+        elif key == 'S':
+            self.node.merge_inner(Node("scale([0, 0, 0])"))
+        elif key == 'a':
+            self.node.merge_before(Node("//", True))
+        elif key == 'A':
+            self.node.merge_after(Node("//", True))
         else:
             return key
 
@@ -182,7 +210,7 @@ class TreeListBox(urwid.ListBox):
         super(TreeListBox, self).__init__(body)
 
     def update(self):
-        self.manager.undo_store()
+        self.manager.checkpoint()
         self.update_tree = True
         self._invalidate()
 
@@ -245,8 +273,9 @@ class Manager():
             self.tree = importer.import_scad(argv[1])
             self.exportfile = argv[2]
 
-    def undo_store(self):
-        self.undoer.store(self.tree)
+    def checkpoint(self, undo=True):
+        if undo:
+            self.undoer.store(self.tree)
         if self.exportfile:
             if importer.export_scad(self.exportfile, self.tree):
                 error("failed to export")
@@ -255,6 +284,7 @@ class Manager():
         r = self.undoer.undo()
         if r:
             self.tree = r
+            self.checkpoint(undo=False)
             return True
         return False
         
@@ -262,6 +292,7 @@ class Manager():
         r = self.undoer.redo()
         if r:
             self.tree = r
+            self.checkpoint(undo=False)
             return True
         return False
 

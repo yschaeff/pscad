@@ -135,6 +135,8 @@ def export_scad(filename, tree):
                 f.write("%s {\n"%prefix)
                 l += 1
             parent_stack.append(n)
+        elif re_comment.match(str(n)):
+            f.write("%s\n"%prefix)
         else:
             f.write("%s;\n"%prefix)
 

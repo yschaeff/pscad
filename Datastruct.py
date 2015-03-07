@@ -3,11 +3,17 @@ from copy import deepcopy
 
 
 class Node():
-    def __init__(self, content):
-        self.content = content
+    def __init__(self, content, encapsulate=False):
         self.parent = None
         self.children = []
         self.descendants = 0
+        if encapsulate:
+            self.content = "root"
+            n = Node(content)
+            self.children = [n]
+            n.parent = self
+        else:
+            self.content = content
 
     def depth(self):
         """depth in tree of this node. root is at depth 0"""
@@ -80,7 +86,36 @@ class Node():
             self.parent.merge(i, source)
         else:
             self.merge(0, source)
-            
+
+    def merge_outer(self, source):
+        if not source or not self.parent:
+            return
+        source.children.append(self)
+        source.parent = self.parent
+        i = self.parent.children.index(self)
+        self.parent.children[i] = source
+        source.descendants = self.descendants+1
+        self.parent = source
+        p = source.parent
+        while p:
+            p.descendants += 1
+            p = p.parent
+
+                        
+    def merge_inner(self, source):
+        if not source:
+            return
+        source.children = self.children
+        self.children = [source]
+        for c in source.children:
+            c.parent = source
+        source.parent = self
+        source.descendants = self.descendants
+        p = self
+        while p:
+            p.descendants += 1
+            p = p.parent
+                        
     def split(self):
         root = Node("Root")
         if self.parent == None:
