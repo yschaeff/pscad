@@ -10,6 +10,18 @@ from pretty import fabulous, addstr
 from sys import argv
 
 UNDO_CAP = 1000
+SPACE_PER_INDENT = 4
+HELP_STRING = "yYxXpPgGuU *!#% (in) [dui trs]"
+
+palette = [
+    ('default', 'white', ''),
+    ('edit', 'black', 'yellow'),
+    ('error', 'white', 'dark red'),
+    ('select', 'white', 'dark blue'),
+    ('status', 'black', 'white'),
+    ('bg', 'white', ''),]
+    
+
 # TODO
 # hotkeys for diff etc
 # fix fablous for function defs
@@ -83,26 +95,6 @@ def debug_print_tree(tree, i=0):
          debug_print_tree(c, i+1)
 
             
-if 0 and __name__ == "__main__":
-    import traceback, sys
-    if len(argv) == 1:
-        curses.wrapper(main)
-    if len(argv) == 3:
-        try:
-            curses.wrapper(main, argv[1], argv[2])
-        except:
-            #~ tree = importer.import_scad2(argv[1])
-            #~ if tree: debug_print_tree(tree)
-            print()
-            print(traceback.print_exc(file=sys.stdout))
-    if len(argv) == 2:
-            tree = importer.import_scad(argv[1])
-            if tree: debug_print_tree(tree)
-
-
-def show_or_exit(key):
-    if key in ('q', 'Q'):
-        raise urwid.ExitMainLoop()
     
 class SelectText(urwid.Widget):
 
@@ -210,28 +202,25 @@ class SelectText(urwid.Widget):
                  return
                  
 class TreeListBox(urwid.ListBox):
-    def __init__(self, tree, indent_width):
-        self.tree = tree
+    def __init__(self, manager, indent_width):
+        self.manager = manager
         body = urwid.SimpleFocusListWalker([])
         self.indent = indent_width;
-        self.undo = Undo(UNDO_CAP)
         self.d = 0
         self.update()
         self.buf = Clippy()
         super(TreeListBox, self).__init__(body)
 
     def update(self):
-        global status
-        self.undo.store(self.tree)
+        self.manager.undo_store()
         self.update_tree = True
         self._invalidate()
-        status.set_text("%d undo len %d index %d"%(self.d, len(self.undo.undo_history), self.undo.undo_index))
 
     def render(self, size, focus=False):
         if self.update_tree:
             self.update_tree = False
             tree_text = []
-            for node in self.tree:
+            for node in self.manager.get_tree():
                 t = SelectText(node, self, self.buf)
                 p = urwid.Padding(t, align='left', width='pack', min_width=None, left=node.depth()*self.indent)
                 tree_text.append(p)
@@ -260,43 +249,60 @@ class TreeListBox(urwid.ListBox):
                     w._invalidate()
             return None
         elif key == 'u':
-            r = self.undo.undo()
-            if r:
-                self.tree = r
+            if self.manager.undo():
                 self.update_tree = True
                 self._invalidate()
-                status.set_text("%d undo len %d index %d"%(self.d, len(self.undo.undo_history), self.undo.undo_index))
             return None
         elif key == 'U':
-            r = self.undo.redo()
-            if r:
-                self.tree = r
+            if self.manager.reundo():
                 self.update_tree = True
                 self._invalidate()
-                status.set_text("%d undo len %d index %d"%(self.d, len(self.undo.undo_history), self.undo.undo_index))
             return None
         return key
 
-palette = [
-    ('default', 'white', ''),
-    ('edit', 'black', 'yellow'),
-    ('error', 'white', 'dark red'),
-    ('select', 'white', 'dark blue'),
-    ('status', 'black', 'white'),
-    ('bg', 'white', ''),]
-    
-SPACE_PER_INDENT = 4
+def show_or_exit(key):
+    if key in ('q', 'Q'):
+        raise urwid.ExitMainLoop()
 
-status = urwid.Text("Status line")
-helptext = urwid.Text("yYxXpPgGuU *!#% (in) [dui trs]")
-footer = urwid.Pile([status, helptext])
-footer_pretty = urwid.AttrMap(footer, 'status')
+class Manager():
+    def __init__(self, argv):
+        self.tree = Node("No Document loaded!")
+        self.undo = Undo(UNDO_CAP)
+        self.tree = importer.import_scad(argv[1])
 
-tree = importer.import_scad(argv[1])
-tree_list = TreeListBox(tree, SPACE_PER_INDENT)
-body = urwid.AttrMap(tree_list, 'bg')
 
-frame = urwid.Frame(body, footer=footer_pretty, focus_part='body')
+    def undo_store(self):
+        self.undo.store(self.tree)
 
-main = urwid.MainLoop(frame, palette, unhandled_input=show_or_exit)
-main.run()
+    def undo(self):
+        r = self.undo.undo()
+        if r:
+            self.tree = r
+            return True
+        return False
+        
+    def redo(self):
+        r = self.undo.redo()
+        if r:
+            self.tree = r
+            return True
+        return False
+
+    def get_tree(self):
+        return self.tree
+
+
+if __name__ == "__main__":
+    status = urwid.Text("")
+    helptext = urwid.Text(HELP_STRING)
+    footer = urwid.Pile([status, helptext])
+    footer_pretty = urwid.AttrMap(footer, 'status')
+
+    manager = Manager(argv)
+    tree_list = TreeListBox(manager, SPACE_PER_INDENT)
+    body = urwid.AttrMap(tree_list, 'bg')
+
+    frame = urwid.Frame(body, footer=footer_pretty, focus_part='body')
+
+    main = urwid.MainLoop(frame, palette, unhandled_input=show_or_exit)
+    main.run()

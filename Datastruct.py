@@ -70,7 +70,7 @@ class Node():
             i = self.parent.children.index(self)
             self.parent.merge(i, source)
         else:
-            sel_node.merge(0, source)
+            self.merge(0, source)
 
     def merge_after(self, source):
         if not source:
@@ -79,7 +79,7 @@ class Node():
             i = self.parent.children.index(self)+1
             self.parent.merge(i, source)
         else:
-            sel_node.merge(0, source)
+            self.merge(0, source)
             
     def split(self):
         root = Node("Root")
