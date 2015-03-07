@@ -34,10 +34,23 @@ exps = [
 # TODO
 # hotkeys for diff etc
 # fix fablous for function defs
-# TODO check bracket balance
+
+def is_balanced(text):
+    pair = {")":"(", "]":"[", "}":"{"}
+    stack = []
+    for c in text:
+        if c in pair.values():
+            stack.append(c)
+        elif c in pair.keys():
+            p = stack.pop()
+            if p != pair[c]:
+                return False
+    return (len(stack) == 0)
 
 def is_valid(text):
     global exps
+    if not is_balanced(text):
+        return False
     for e in exps:
         if e.match(text):
             return True
