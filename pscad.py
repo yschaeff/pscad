@@ -20,17 +20,32 @@ palette = [
     ('select', 'white', 'dark blue'),
     ('status', 'black', 'white'),
     ('bg', 'white', ''),]
-    
+
+exps = [
+    re.compile(r"\s*//.*"),                         ## commment
+    re.compile(r"\s*[$\w]+\s*=\s*.+"),              ## assignment
+    re.compile(r"\s*\w+\s*\(.*\)\s*"),              ## call
+    re.compile(r"\s*function(?:\s+\w+)?\s*\(.*\)\s*=\s*"),  ## func
+    re.compile(r"\s*module\s+\w+\s*\([^;\)]*\)"),   ## block
+    re.compile(r"\s*include\s+\w+\s*"),             ## include
+    re.compile(r"\s*use\s+\w+\s*"),                 ## use
+]
 # TODO
 # hotkeys for diff etc
 # fix fablous for function defs
 
+    #~ re_comment = re.compile(r"//.*\n")
+    #~ re_whitespace = re.compile(r"\s+")
+    #~ re_assignment = re.compile(r"\s*[$\w]+\s*=\s*[^;\n]+;")
+    #~ re_call = re.compile(r"\s*\w+\s*\(.*\)\s*;")
+    #~ re_func = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)\s*=\s*[^;\n]+;")
+    #~ re_bloc = re.compile(r"\s*\w+(?:\s+\w+)?\s*\([^;\)]*\)")
+    #~ re_open = re.compile(r"\s*{")
+    #~ re_close = re.compile(r"\s*}")
+
 def is_valid(text):
-    exps = [
-        re.compile(r"//.*\n"),
-        re.compile(r"//.*\n"),
-        re.compile(r"//.*\n"),
-    ]
+    global exps
+    ##TODO check bracket balance
     for e in exps:
         if e.match(text):
             return True
@@ -65,7 +80,7 @@ class SelectText(urwid.Widget):
 
     def handler(self, widget, newtext):
         ## TODO VALIDATE CONTENT, BRIGHT RED ON ERROR
-        self.node.content = newtext
+        self.node.content = newtext.strip()
 
     def get_cursor_coords(self, size):
         if self.showedit:
@@ -122,10 +137,10 @@ class SelectText(urwid.Widget):
     def render(self, size, focus=False):
         if self.showedit:
             map2 = urwid.AttrMap(self.edit, 'edit')
-        elif not self.valid:
-            map2 = urwid.AttrMap(self.text, 'error')
         elif focus:
             map2 = urwid.AttrMap(self.text, 'select')
+        elif not self.valid:
+            map2 = urwid.AttrMap(self.text, 'error')
         else:
             map2 = urwid.AttrMap(self.text, 'default')
         return map2.render(size, focus)
