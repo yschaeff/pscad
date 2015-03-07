@@ -10,32 +10,9 @@ from pretty import fabulous, addstr
 from sys import argv
 
 UNDO_CAP = 100
-F_STAT_CLEAR  = 0
-F_STAT_UNDO   = 1
-F_STAT_EXPORT = 2
-
 # TODO
 # hotkeys for diff etc
 # fix fablous for function defs
-
-#~ def usage(win):
-    #~ helptext = "yYxXpPgGuU *!#% (in) [dui trs]"
-    #~ my, mx = win.getmaxyx()
-    #~ addstr(win, my-2, mx-len(helptext)-1, " ")
-    #~ addstr(win, my-2, mx-len(helptext)-1, helptext, curses.A_REVERSE)
-#~ 
-#~ def status(win, text=None):
-    #~ global status_string
-#~ 
-    #~ if "status_string" not in globals():
-        #~ status_string = ""
-    #~ 
-    #~ if text:
-        #~ status_string = text
-    #~ my, mx = win.getmaxyx()
-    #~ win.move(my-1, 0)
-    #~ win.clrtoeol()
-    #~ addstr(win, my-1, 0, status_string, curses.A_REVERSE)
 
 def print_buffer(win, buffer):
     if not buffer:
@@ -51,28 +28,6 @@ def print_buffer(win, buffer):
     win.move(my-2, 0)
     win.clrtoeol()
     addstr(win, my-2, 0, text, curses.A_REVERSE)
-
-def render(node, pwin, sel_node, y=0, x=0):
-    highlight = 0
-    INDENT = 4
-    my, mx = pwin.getmaxyx()
-
-    if node == sel_node:
-        highlight = curses.A_BOLD|curses.color_pair(3)
-        addstr(pwin, y, x, " "*mx, highlight)
-        addstr(pwin, y, x, str(node), highlight)
-    else:
-        fabulous(pwin, y,x, mx, str(node.content))
-
-    h = 1;
-    for child in node.children:
-        if y+h+1 > my:
-            break
-        ch = render(child, pwin, sel_node, y+h, x+INDENT)
-        for j in range(ch):
-            addstr(pwin, y+h+j, x, " "*INDENT, highlight)
-        h += ch
-    return h
 
 def paste_before(sel_node, buffer, stdscr):
     if not buffer:
@@ -99,26 +54,6 @@ def paste_after(sel_node, buffer, stdscr):
     else:
         root = deepcopy(buffer)
         sel_node.merge(0, root)
-
-#~ def toggle_modifier(node, char):
-    #~ mods = "*!#%"
-    #~ if char not in mods:
-        #~ return
-    #~ t = node.content
-    #~ for c in t:
-        #~ if c not in mods:
-            #~ node.content = char+t
-            #~ return
-        #~ elif c == char:
-             #~ node.content = t.replace(char, "", 1)
-             #~ return
-
-def init_colors():
-    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE) #status
-    curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLUE)  #select
-    curses.init_pair(4, curses.COLOR_RED,   curses.COLOR_BLACK)
-    curses.init_pair(5, curses.COLOR_BLUE,  curses.COLOR_BLACK)
-    curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
 def main(stdscr, infile=None, outfile=None):
     init_colors()
@@ -179,68 +114,6 @@ def main(stdscr, infile=None, outfile=None):
                 status(stdscr, "imported file %s"%(fn))
         elif c == ord('e'): #export
             r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
-            #todo disp error
-            #~ if r!=0: exit(r)
-
-        #~ elif c == ord('q'): #quit
-            #~ break
-            
-        #~ elif c == ord('Y'):
-            #~ if sel_node:
-                #~ i = tree.offset(sel_node)
-                #~ buffer = sel_node.split()
-                #~ sel_node = tree.node_at_offset(i)
-                #~ status(stdscr, "Yanked subtree")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-#~ 
-        #~ elif c == ord('y'):
-            #~ if sel_node:
-                #~ i = tree.offset(sel_node)
-                #~ buffer = sel_node.detach()
-                #~ sel_node = tree.node_at_offset(i)
-                #~ status(stdscr, "Yanked node")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-#~ 
-        #~ elif c == ord('X'):
-            #~ if sel_node:
-                #~ i = tree.offset(sel_node)
-                #~ _ = sel_node.split()
-                #~ sel_node = tree.node_at_offset(i)
-                #~ status(stdscr, "Cut subtree")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-                #~ 
-        #~ elif c == ord('x'):
-            #~ if sel_node:
-                #~ i = tree.offset(sel_node)
-                #~ _ = sel_node.detach()
-                #~ sel_node = tree.node_at_offset(i)
-                #~ status(stdscr, "Cut node")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-
-        #~ elif c == ord('g'): #gobble
-            #~ if sel_node:
-                #~ sel_node.gobble()
-                #~ status(stdscr, "Gobbled node")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-#~ 
-        #~ elif c == ord('G'): #degobble
-            #~ if sel_node:
-                #~ sel_node.degobble()
-                #~ status(stdscr, "Degobbled node")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-
-        #~ elif c == ord('\t'): #cling
-            #~ if sel_node:
-                #~ sel_node.cling()
-                #~ status(stdscr, "Clinged node")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-                    #~ 
-        #~ elif c == curses.KEY_BTAB: #decling
-            #~ if sel_node:
-                #~ sel_node.decling()
-                #~ status(stdscr, "Declinged node")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-
         elif c == ord('P'):
             paste_before(sel_node, buffer, stdscr)
             changes = F_STAT_EXPORT|F_STAT_UNDO
@@ -248,54 +121,6 @@ def main(stdscr, infile=None, outfile=None):
         elif c == ord('p'):
             paste_after(sel_node, buffer, stdscr)
             changes = F_STAT_EXPORT|F_STAT_UNDO
-
-        elif c == ord('U'):
-            i = tree.offset(sel_node)
-            r = undo.redo()
-            if r:
-                tree = r
-                sel_node = tree
-                changes = F_STAT_EXPORT
-                sel_node = tree.node_at_offset(i)
-
-        elif c == ord('u'):
-            i = tree.offset(sel_node)
-            r = undo.undo()
-            if r:
-                tree = r
-                sel_node = tree
-                changes = F_STAT_EXPORT
-                sel_node = tree.node_at_offset(i)
-
-        #~ elif c == ord('!'):
-            #~ if sel_node:
-                #~ toggle_modifier(sel_node, "!")
-                #~ status(stdscr, "Toggled exclusive modifier")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-        #~ elif c == ord('%'):
-            #~ if sel_node:
-                #~ toggle_modifier(sel_node, "%")
-                #~ status(stdscr, "Toggled transparant modifier")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-        #~ elif c == ord('#'):
-            #~ if sel_node:
-                #~ toggle_modifier(sel_node, "#")
-                #~ status(stdscr, "Toggled highlight modifier")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-        #~ elif c == ord('*'):
-            #~ if sel_node:
-                #~ toggle_modifier(sel_node, "*")
-                #~ status(stdscr, "Toggled disable modifier")
-                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
-
-
-        #~ elif c == curses.KEY_UP:
-            #~ if sel_node:
-                #~ sel_node = sel_node.prev()
-#~ 
-        #~ elif c == curses.KEY_DOWN:
-            #~ if sel_node:
-                #~ sel_node = sel_node.next()
 
         elif c == curses.KEY_SLEFT:
             if sel_node and sel_node.parent:
@@ -316,21 +141,6 @@ def main(stdscr, infile=None, outfile=None):
         elif c == curses.KEY_LEFT:
             if sel_node and sel_node.parent:
                 sel_node = sel_node.parent
-
-        #~ elif c == curses.KEY_HOME:
-            #~ sel_node = tree
-#~ 
-        #~ elif c == curses.KEY_END:
-            #~ i = tree.offset(sel_node)
-            #~ sel_node = tree.node_at_offset(tree_h)
-#~ 
-        #~ elif c == curses.KEY_PPAGE:
-            #~ i = tree.offset(sel_node)
-            #~ sel_node = tree.node_at_offset(i-y//2)
-#~ 
-        #~ elif c == curses.KEY_NPAGE:
-            #~ i = tree.offset(sel_node)
-            #~ sel_node = tree.node_at_offset(i+y//2)
 
         if changes & F_STAT_UNDO:
             undo.store(tree)
