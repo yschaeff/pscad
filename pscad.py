@@ -18,24 +18,24 @@ F_STAT_EXPORT = 2
 # hotkeys for diff etc
 # fix fablous for function defs
 
-def usage(win):
-    helptext = "yYxXpPgGuU *!#% (in) [dui trs]"
-    my, mx = win.getmaxyx()
-    addstr(win, my-2, mx-len(helptext)-1, " ")
-    addstr(win, my-2, mx-len(helptext)-1, helptext, curses.A_REVERSE)
-
-def status(win, text=None):
-    global status_string
-
-    if "status_string" not in globals():
-        status_string = ""
-    
-    if text:
-        status_string = text
-    my, mx = win.getmaxyx()
-    win.move(my-1, 0)
-    win.clrtoeol()
-    addstr(win, my-1, 0, status_string, curses.A_REVERSE)
+#~ def usage(win):
+    #~ helptext = "yYxXpPgGuU *!#% (in) [dui trs]"
+    #~ my, mx = win.getmaxyx()
+    #~ addstr(win, my-2, mx-len(helptext)-1, " ")
+    #~ addstr(win, my-2, mx-len(helptext)-1, helptext, curses.A_REVERSE)
+#~ 
+#~ def status(win, text=None):
+    #~ global status_string
+#~ 
+    #~ if "status_string" not in globals():
+        #~ status_string = ""
+    #~ 
+    #~ if text:
+        #~ status_string = text
+    #~ my, mx = win.getmaxyx()
+    #~ win.move(my-1, 0)
+    #~ win.clrtoeol()
+    #~ addstr(win, my-1, 0, status_string, curses.A_REVERSE)
 
 def print_buffer(win, buffer):
     if not buffer:
@@ -100,18 +100,18 @@ def paste_after(sel_node, buffer, stdscr):
         root = deepcopy(buffer)
         sel_node.merge(0, root)
 
-def toggle_modifier(node, char):
-    mods = "*!#%"
-    if char not in mods:
-        return
-    t = node.content
-    for c in t:
-        if c not in mods:
-            node.content = char+t
-            return
-        elif c == char:
-             node.content = t.replace(char, "", 1)
-             return
+#~ def toggle_modifier(node, char):
+    #~ mods = "*!#%"
+    #~ if char not in mods:
+        #~ return
+    #~ t = node.content
+    #~ for c in t:
+        #~ if c not in mods:
+            #~ node.content = char+t
+            #~ return
+        #~ elif c == char:
+             #~ node.content = t.replace(char, "", 1)
+             #~ return
 
 def init_colors():
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE) #status
@@ -182,64 +182,64 @@ def main(stdscr, infile=None, outfile=None):
             #todo disp error
             #~ if r!=0: exit(r)
 
-        elif c == ord('q'): #quit
-            break
+        #~ elif c == ord('q'): #quit
+            #~ break
             
-        elif c == ord('Y'):
-            if sel_node:
-                i = tree.offset(sel_node)
-                buffer = sel_node.split()
-                sel_node = tree.node_at_offset(i)
-                status(stdscr, "Yanked subtree")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
+        #~ elif c == ord('Y'):
+            #~ if sel_node:
+                #~ i = tree.offset(sel_node)
+                #~ buffer = sel_node.split()
+                #~ sel_node = tree.node_at_offset(i)
+                #~ status(stdscr, "Yanked subtree")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
+#~ 
+        #~ elif c == ord('y'):
+            #~ if sel_node:
+                #~ i = tree.offset(sel_node)
+                #~ buffer = sel_node.detach()
+                #~ sel_node = tree.node_at_offset(i)
+                #~ status(stdscr, "Yanked node")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
+#~ 
+        #~ elif c == ord('X'):
+            #~ if sel_node:
+                #~ i = tree.offset(sel_node)
+                #~ _ = sel_node.split()
+                #~ sel_node = tree.node_at_offset(i)
+                #~ status(stdscr, "Cut subtree")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
+                #~ 
+        #~ elif c == ord('x'):
+            #~ if sel_node:
+                #~ i = tree.offset(sel_node)
+                #~ _ = sel_node.detach()
+                #~ sel_node = tree.node_at_offset(i)
+                #~ status(stdscr, "Cut node")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
 
-        elif c == ord('y'):
-            if sel_node:
-                i = tree.offset(sel_node)
-                buffer = sel_node.detach()
-                sel_node = tree.node_at_offset(i)
-                status(stdscr, "Yanked node")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
+        #~ elif c == ord('g'): #gobble
+            #~ if sel_node:
+                #~ sel_node.gobble()
+                #~ status(stdscr, "Gobbled node")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
+#~ 
+        #~ elif c == ord('G'): #degobble
+            #~ if sel_node:
+                #~ sel_node.degobble()
+                #~ status(stdscr, "Degobbled node")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
 
-        elif c == ord('X'):
-            if sel_node:
-                i = tree.offset(sel_node)
-                _ = sel_node.split()
-                sel_node = tree.node_at_offset(i)
-                status(stdscr, "Cut subtree")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-                
-        elif c == ord('x'):
-            if sel_node:
-                i = tree.offset(sel_node)
-                _ = sel_node.detach()
-                sel_node = tree.node_at_offset(i)
-                status(stdscr, "Cut node")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-
-        elif c == ord('g'): #gobble
-            if sel_node:
-                sel_node.gobble()
-                status(stdscr, "Gobbled node")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-
-        elif c == ord('G'): #degobble
-            if sel_node:
-                sel_node.degobble()
-                status(stdscr, "Degobbled node")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-
-        elif c == ord('\t'): #cling
-            if sel_node:
-                sel_node.cling()
-                status(stdscr, "Clinged node")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-                    
-        elif c == curses.KEY_BTAB: #decling
-            if sel_node:
-                sel_node.decling()
-                status(stdscr, "Declinged node")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
+        #~ elif c == ord('\t'): #cling
+            #~ if sel_node:
+                #~ sel_node.cling()
+                #~ status(stdscr, "Clinged node")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
+                    #~ 
+        #~ elif c == curses.KEY_BTAB: #decling
+            #~ if sel_node:
+                #~ sel_node.decling()
+                #~ status(stdscr, "Declinged node")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
 
         elif c == ord('P'):
             paste_before(sel_node, buffer, stdscr)
@@ -267,35 +267,35 @@ def main(stdscr, infile=None, outfile=None):
                 changes = F_STAT_EXPORT
                 sel_node = tree.node_at_offset(i)
 
-        elif c == ord('!'):
-            if sel_node:
-                toggle_modifier(sel_node, "!")
-                status(stdscr, "Toggled exclusive modifier")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-        elif c == ord('%'):
-            if sel_node:
-                toggle_modifier(sel_node, "%")
-                status(stdscr, "Toggled transparant modifier")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-        elif c == ord('#'):
-            if sel_node:
-                toggle_modifier(sel_node, "#")
-                status(stdscr, "Toggled highlight modifier")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-        elif c == ord('*'):
-            if sel_node:
-                toggle_modifier(sel_node, "*")
-                status(stdscr, "Toggled disable modifier")
-                changes = F_STAT_EXPORT|F_STAT_UNDO
+        #~ elif c == ord('!'):
+            #~ if sel_node:
+                #~ toggle_modifier(sel_node, "!")
+                #~ status(stdscr, "Toggled exclusive modifier")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
+        #~ elif c == ord('%'):
+            #~ if sel_node:
+                #~ toggle_modifier(sel_node, "%")
+                #~ status(stdscr, "Toggled transparant modifier")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
+        #~ elif c == ord('#'):
+            #~ if sel_node:
+                #~ toggle_modifier(sel_node, "#")
+                #~ status(stdscr, "Toggled highlight modifier")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
+        #~ elif c == ord('*'):
+            #~ if sel_node:
+                #~ toggle_modifier(sel_node, "*")
+                #~ status(stdscr, "Toggled disable modifier")
+                #~ changes = F_STAT_EXPORT|F_STAT_UNDO
 
 
-        elif c == curses.KEY_UP:
-            if sel_node:
-                sel_node = sel_node.prev()
-
-        elif c == curses.KEY_DOWN:
-            if sel_node:
-                sel_node = sel_node.next()
+        #~ elif c == curses.KEY_UP:
+            #~ if sel_node:
+                #~ sel_node = sel_node.prev()
+#~ 
+        #~ elif c == curses.KEY_DOWN:
+            #~ if sel_node:
+                #~ sel_node = sel_node.next()
 
         elif c == curses.KEY_SLEFT:
             if sel_node and sel_node.parent:
@@ -317,20 +317,20 @@ def main(stdscr, infile=None, outfile=None):
             if sel_node and sel_node.parent:
                 sel_node = sel_node.parent
 
-        elif c == curses.KEY_HOME:
-            sel_node = tree
-
-        elif c == curses.KEY_END:
-            i = tree.offset(sel_node)
-            sel_node = tree.node_at_offset(tree_h)
-
-        elif c == curses.KEY_PPAGE:
-            i = tree.offset(sel_node)
-            sel_node = tree.node_at_offset(i-y//2)
-
-        elif c == curses.KEY_NPAGE:
-            i = tree.offset(sel_node)
-            sel_node = tree.node_at_offset(i+y//2)
+        #~ elif c == curses.KEY_HOME:
+            #~ sel_node = tree
+#~ 
+        #~ elif c == curses.KEY_END:
+            #~ i = tree.offset(sel_node)
+            #~ sel_node = tree.node_at_offset(tree_h)
+#~ 
+        #~ elif c == curses.KEY_PPAGE:
+            #~ i = tree.offset(sel_node)
+            #~ sel_node = tree.node_at_offset(i-y//2)
+#~ 
+        #~ elif c == curses.KEY_NPAGE:
+            #~ i = tree.offset(sel_node)
+            #~ sel_node = tree.node_at_offset(i+y//2)
 
         if changes & F_STAT_UNDO:
             undo.store(tree)
@@ -366,7 +366,7 @@ def show_or_exit(key):
     
 class SelectText(urwid.Widget):
 
-    def __init__(self, node):
+    def __init__(self, node, treelist):
         super(urwid.Widget, self).__init__()
         self.edit = urwid.Edit("", node.content)
         self.text = urwid.Text(node.content)
@@ -376,6 +376,7 @@ class SelectText(urwid.Widget):
         key = urwid.connect_signal(self.edit, 'change', SelectText.handler, user_args=[self])
         self.showedit = 0
         self.node = node
+        self.treelist = treelist
         self.indent = node.depth()
 
     def rows(self, size, focus=False):
@@ -390,6 +391,7 @@ class SelectText(urwid.Widget):
         return True
 
     def handler(self, widget, newtext):
+        ## TODO VALIDATE CONTENT, BRIGHT RED ON ERROR
         self.text.set_text(newtext)
 
     def get_cursor_coords(self, size):
@@ -401,10 +403,44 @@ class SelectText(urwid.Widget):
         if key == 'enter':
             self.showedit ^= 1
             self._invalidate() # mark widget as changed
+            ## update so an undo can be saved
+            if self.showedit == 0:
+                self.treelist.update()
             return None
+            
         if self.showedit:
             return self.edit.keypress(size, key)
-        return key
+            
+        ## in Text mode
+        if key == 'g':
+            self.node.gobble()
+        elif key == 'G':
+            self.node.degobble()
+        elif key == 'tab':
+            self.node.cling()
+        elif key == 'shift tab':
+            self.node.decling()
+        elif key == 'y':
+            self.node.detach()
+        elif key == 'Y':
+            self.node.split()
+        elif key == 'x':
+            self.node.detach()
+        elif key == 'X':
+            self.node.split()
+        elif key == '*':
+            self.toggle_modifier("*")
+        elif key == '!':
+            self.toggle_modifier("!")
+        elif key == '#':
+            self.toggle_modifier("#")
+        elif key == '%':
+            self.toggle_modifier("%")
+        else:
+            return key
+
+        self.treelist.update()
+        return None
 
     def render(self, size, focus=False):
         if self.showedit:
@@ -415,35 +451,60 @@ class SelectText(urwid.Widget):
             map2 = urwid.AttrMap(self.text, 'default')
         return map2.render(size, focus)
 
+    def toggle_modifier(self, char):
+        mods = "*!#%"
+        if char not in mods:
+            return
+        t = self.node.content
+        for c in t:
+            if c not in mods:
+                self.node.content = char+t
+                return
+            elif c == char:
+                 self.node.content = t.replace(char, "", 1)
+                 return
+                 
 class TreeListBox(urwid.ListBox):
     def __init__(self, tree, indent_width):
         self.tree = tree
         body = urwid.SimpleFocusListWalker([])
-        self.update_tree = True
-        self.editing = False
         self.indent = indent_width;
+        self.undo = Undo(UNDO_CAP)
+        self.d = 0
+        self.update()
         super(TreeListBox, self).__init__(body)
 
+    def update(self):
+        global status
+        self.undo.store(self.tree)
+        self.update_tree = True
+        self._invalidate()
+        status.set_text("%d undo len %d index %d"%(self.d, len(self.undo.undo_history), self.undo.undo_index))
+
     def render(self, size, focus=False):
-        if self.update_tree and not self.editing:
+        if self.update_tree:
             self.update_tree = False
             tree_text = []
             for node in self.tree:
-                t = SelectText(node)
+                t = SelectText(node, self)
                 p = urwid.Padding(t, align='left', width='pack', min_width=None, left=node.depth()*self.indent)
                 tree_text.append(p)
-            try:
+            if len(self.body) > 0: 
                 pos = self.focus_position
-            except:
+            else:
                 pos = 0
             self.body.clear()
             self.body.extend(tree_text)
-            self.focus_position = pos
+            if pos < len(self.body):
+                self.focus_position = pos
+            self.d+=1
+
         
         canvas = super(TreeListBox, self).render(size, focus)
         return canvas
 
     def keypress(self, size, key):
+        global status
         key = super(TreeListBox, self).keypress(size, key)
         if key == 'esc':
             for n in self.body:
@@ -452,24 +513,44 @@ class TreeListBox(urwid.ListBox):
                     w.showedit = 0
                     w._invalidate()
             return None
+        elif key == 'u':
+            r = self.undo.undo()
+            if r:
+                self.tree = r
+                self.update_tree = True
+                self._invalidate()
+                status.set_text("%d undo len %d index %d"%(self.d, len(self.undo.undo_history), self.undo.undo_index))
+            return None
+        elif key == 'U':
+            r = self.undo.redo()
+            if r:
+                self.tree = r
+                self.update_tree = True
+                self._invalidate()
+                status.set_text("%d undo len %d index %d"%(self.d, len(self.undo.undo_history), self.undo.undo_index))
+            return None
         return key
 
 palette = [
     ('default', 'white', ''),
-    ('edit', 'white', 'dark red'),
+    ('edit', 'black', 'yellow'),
+    ('error', 'white', 'dark red'),
     ('select', 'white', 'dark blue'),
     ('status', 'black', 'white'),
     ('bg', 'white', ''),]
+    
 SPACE_PER_INDENT = 4
+
+status = urwid.Text("Status line")
+helptext = urwid.Text("yYxXpPgGuU *!#% (in) [dui trs]")
+footer = urwid.Pile([status, helptext])
+footer_pretty = urwid.AttrMap(footer, 'status')
 
 tree = importer.import_scad(argv[1])
 tree_list = TreeListBox(tree, SPACE_PER_INDENT)
 body = urwid.AttrMap(tree_list, 'bg')
 
-status = urwid.Text("Status line")
-footer = urwid.AttrMap(status, 'status')
-
-frame = urwid.Frame(body, footer=footer, focus_part='body')
+frame = urwid.Frame(body, footer=footer_pretty, focus_part='body')
 
 main = urwid.MainLoop(frame, palette, unhandled_input=show_or_exit)
 main.run()
