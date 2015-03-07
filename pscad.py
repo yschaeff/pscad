@@ -7,7 +7,6 @@ import importer
 from Datastruct import Node
 from clipboard import Clippy
 from undo import Undo
-from pretty import fabulous, addstr
 
 UNDO_CAP = 1000
 SPACE_PER_INDENT = 4
