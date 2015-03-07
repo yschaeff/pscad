@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
-import curses
-import urwid
+import curses, re, urwid
+from sys import argv
+
+import importer
 from Datastruct import Node
 from clipboard import Clippy
-import importer
 from undo import Undo
 from pretty import fabulous, addstr
-from sys import argv
 
 UNDO_CAP = 1000
 SPACE_PER_INDENT = 4
-HELP_STRING = "yYxXpPgGuU *!#% (in) [dui trs]"
+HELP_STRING = "yYxXpPgGzZ *!#% duitrs"
 
 palette = [
     ('default', 'white', ''),
@@ -21,83 +21,22 @@ palette = [
     ('status', 'black', 'white'),
     ('bg', 'white', ''),]
     
-
 # TODO
 # hotkeys for diff etc
 # fix fablous for function defs
 
-def main(stdscr, infile=None, outfile=None):
-    init_colors()
-    buffer = None
-    undo = Undo(UNDO_CAP)
+def is_valid(text):
+    exps = [
+        re.compile(r"//.*\n"),
+        re.compile(r"//.*\n"),
+        re.compile(r"//.*\n"),
+    ]
+    for e in exps:
+        if e.match(text):
+            return True
+    return False
 
-    if infile:
-        tree = importer.import_scad(infile)
-        if not tree:
-            raise(Exception("Error importing from file %s"%infile))
-    else:
-        tree = Node("Document root")
-    undo.store(tree)
-    sel_node = tree
-    scroll = 0
-    stdscr.refresh()
-    while 1:
-        y,x = stdscr.getmaxyx()
-        sel_idx = tree.offset(sel_node)
-        tree_h = tree.descendants + 1
-        sel_h = sel_node.descendants + 1
-        pad = curses.newpad(tree_h, x)
-        render(tree, pad, sel_node)
-        if sel_idx < scroll:
-            while sel_idx < scroll:
-                scroll -= (y//2)
-            scroll = max(0, scroll)
-        elif sel_idx-scroll >= y-2:
-            while sel_idx-scroll >= y-2:
-                scroll += y//2
-        elif (sel_idx-scroll)+sel_h > y and sel_h<y:
-            d = (sel_idx-scroll+sel_h+1) - y
-            scroll += d
-
-        # paint screen
-        pad.refresh(0+scroll,0, 0,0, y-3, x-1)
-        # clear unpainted screen
-        if tree_h-scroll < y:
-            stdscr.move(tree_h-scroll, 0)
-            stdscr.clrtobot()
-
-        print_buffer(stdscr, buffer)
-        usage(stdscr)
-        status(stdscr)
-
-        changes = F_STAT_CLEAR
-
-        c = stdscr.getch()
-        if c == ord('i'): #import
-            fn = '/home/yuri/Documents/pscad/headphon0.scad'
-            t = importer.import_scad(fn)
-            if not t:
-                status(stdscr, "Error importing file %s"%(fn))
-            else:
-                tree = t
-                changes = F_STAT_EXPORT|F_STAT_UNDO
-                sel_node = tree
-                status(stdscr, "imported file %s"%(fn))
-        elif c == ord('e'): #export
-            r = importer.export_scad('/home/yuri/Documents/pscad/temp.scad', tree)
-
-        if changes & F_STAT_EXPORT and outfile:
-            r = importer.export_scad(outfile, tree)
-
-def debug_print_tree(tree, i=0):
-    print("  "*i + "< "+str(tree)+" >")
-    for c in tree.children:
-         debug_print_tree(c, i+1)
-
-            
-    
 class SelectText(urwid.Widget):
-
     def __init__(self, node, treelist, buf):
         super(urwid.Widget, self).__init__()
         self.edit = urwid.Edit("", node.content)
@@ -111,6 +50,7 @@ class SelectText(urwid.Widget):
         self.treelist = treelist
         self.indent = node.depth()
         self.buf = buf
+        self.valid = is_valid(node.content)
 
     def rows(self, size, focus=False):
         return 1
@@ -125,7 +65,6 @@ class SelectText(urwid.Widget):
 
     def handler(self, widget, newtext):
         ## TODO VALIDATE CONTENT, BRIGHT RED ON ERROR
-        self.text.set_text(newtext)
         self.node.content = newtext
 
     def get_cursor_coords(self, size):
@@ -183,6 +122,8 @@ class SelectText(urwid.Widget):
     def render(self, size, focus=False):
         if self.showedit:
             map2 = urwid.AttrMap(self.edit, 'edit')
+        elif not self.valid:
+            map2 = urwid.AttrMap(self.text, 'error')
         elif focus:
             map2 = urwid.AttrMap(self.text, 'select')
         else:
@@ -234,8 +175,6 @@ class TreeListBox(urwid.ListBox):
             if pos < len(self.body):
                 self.focus_position = pos
             self.d+=1
-
-        
         canvas = super(TreeListBox, self).render(size, focus)
         return canvas
 
@@ -249,12 +188,12 @@ class TreeListBox(urwid.ListBox):
                     w.showedit = 0
                     w._invalidate()
             return None
-        elif key == 'u':
+        elif key == 'z':
             if self.manager.undo():
                 self.update_tree = True
                 self._invalidate()
             return None
-        elif key == 'U':
+        elif key == 'Z':
             if self.manager.reundo():
                 self.update_tree = True
                 self._invalidate()
@@ -267,23 +206,33 @@ def show_or_exit(key):
 
 class Manager():
     def __init__(self, argv):
-        self.tree = Node("No Document loaded!")
-        self.undo = Undo(UNDO_CAP)
-        self.tree = importer.import_scad(argv[1])
-
+        #~ self.tree = Node("No Document loaded!")
+        self.undoer = Undo(UNDO_CAP)
+        if len(argv) == 1:
+            self.tree = Node("Document root")
+            self.exportfile = None
+        elif len(argv) == 2:
+            self.tree = importer.import_scad(argv[1])
+            self.exportfile = None
+        else:
+            self.tree = importer.import_scad(argv[1])
+            self.exportfile = argv[2]
 
     def undo_store(self):
-        self.undo.store(self.tree)
+        self.undoer.store(self.tree)
+        if self.exportfile:
+            if importer.export_scad(self.exportfile, self.tree):
+                error("failed to export")
 
     def undo(self):
-        r = self.undo.undo()
+        r = self.undoer.undo()
         if r:
             self.tree = r
             return True
         return False
         
     def redo(self):
-        r = self.undo.redo()
+        r = self.undoer.redo()
         if r:
             self.tree = r
             return True
@@ -291,7 +240,6 @@ class Manager():
 
     def get_tree(self):
         return self.tree
-
 
 if __name__ == "__main__":
     status = urwid.Text("")
