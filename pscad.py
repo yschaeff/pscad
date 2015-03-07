@@ -30,22 +30,14 @@ exps = [
     re.compile(r"\s*include\s+\w+\s*"),             ## include
     re.compile(r"\s*use\s+\w+\s*"),                 ## use
 ]
+
 # TODO
 # hotkeys for diff etc
 # fix fablous for function defs
-
-    #~ re_comment = re.compile(r"//.*\n")
-    #~ re_whitespace = re.compile(r"\s+")
-    #~ re_assignment = re.compile(r"\s*[$\w]+\s*=\s*[^;\n]+;")
-    #~ re_call = re.compile(r"\s*\w+\s*\(.*\)\s*;")
-    #~ re_func = re.compile(r"\s*\w+(?:\s+\w+)?\s*\(.*\)\s*=\s*[^;\n]+;")
-    #~ re_bloc = re.compile(r"\s*\w+(?:\s+\w+)?\s*\([^;\)]*\)")
-    #~ re_open = re.compile(r"\s*{")
-    #~ re_close = re.compile(r"\s*}")
+# TODO check bracket balance
 
 def is_valid(text):
     global exps
-    ##TODO check bracket balance
     for e in exps:
         if e.match(text):
             return True
@@ -79,7 +71,6 @@ class SelectText(urwid.Widget):
         return True
 
     def handler(self, widget, newtext):
-        ## TODO VALIDATE CONTENT, BRIGHT RED ON ERROR
         self.node.content = newtext.strip()
 
     def get_cursor_coords(self, size):
@@ -209,7 +200,7 @@ class TreeListBox(urwid.ListBox):
                 self._invalidate()
             return None
         elif key == 'Z':
-            if self.manager.reundo():
+            if self.manager.redo():
                 self.update_tree = True
                 self._invalidate()
             return None
@@ -221,7 +212,6 @@ def show_or_exit(key):
 
 class Manager():
     def __init__(self, argv):
-        #~ self.tree = Node("No Document loaded!")
         self.undoer = Undo(UNDO_CAP)
         if len(argv) == 1:
             self.tree = Node("Document root")
