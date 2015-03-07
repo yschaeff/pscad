@@ -48,7 +48,7 @@ class Node():
 
     def merge(self, index, source):
         if not source:
-            return self
+            return
         assert(source.parent == None)
         assert(index >= 0 and index <= len(self.children))
 
@@ -62,6 +62,24 @@ class Node():
             self.children.insert(index + i, c)
         source.children = []
         source.descendants = 0
+
+    def merge_before(self, source):
+        if not source:
+            return
+        if self.parent:
+            i = self.parent.children.index(self)
+            self.parent.merge(i, source)
+        else:
+            sel_node.merge(0, source)
+
+    def merge_after(self, source):
+        if not source:
+            return
+        if self.parent:
+            i = self.parent.children.index(self)+1
+            self.parent.merge(i, source)
+        else:
+            sel_node.merge(0, source)
             
     def split(self):
         root = Node("Root")
