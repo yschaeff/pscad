@@ -28,30 +28,6 @@ class Node():
         self.descendants = d
         return self.descendants
 
-    def offset(self, node):
-        """Find the distance between self and a subnode"""
-        p = node
-        offset = 0
-        while p.parent:
-            for c in p.parent.children:
-                if c == node: break
-                offset += c.descendants + 1
-            offset += 1
-            p = p.parent
-            node = p
-        return offset
-
-    def node_at_offset(self, index):
-        """Find the node closest to index"""
-        if index <= 0 or not self.children:
-            return self
-        d = 1
-        for c in self.children:
-            if d + c.descendants >= index:
-                return c.node_at_offset(index - d)
-            d += c.descendants + 1
-        return self.children[-1].node_at_offset(index)
-
     def merge(self, index, source):
         if not source:
             return
@@ -101,7 +77,6 @@ class Node():
             p.descendants += 1
             p = p.parent
 
-                        
     def merge_inner(self, source):
         if not source:
             return
@@ -204,44 +179,7 @@ class Node():
         self.parent = self.parent.parent
         self.parent.children.insert(pidx+1, self)
 
-    def is_subnode(self, subnode):
-        """Check if node is in fact a sub node of this node"""
-        while subnode:
-            if subnode == self: return True
-            subnode = subnode.parent
-        return False
-
-
-    def pop(self, node):
-        assert(self.parent == None)
-        root = Node("Root")
-        if self == node:
-            root.children = node.children
-            root.descendants = node.descendants
-            for c in root.children:
-                c.parent = root
-            node.children = []
-            node.descendants = 0
-        else:
-            root.descendants = 1 + node.descendants
-            self.descendants -= root.descendants
-            root.children = [node]
-            self.children.remove(node)
-            node.parent = root
-        return root
-            
-            
-        
-    def add_child(self, index, node):
-        node.parent = self
-        self.children.insert(index, node)
-
-    def push_child(self, node):
-        node.parent = self
-        self.children.append(node)
-
     def __str__(self):
-        #~ return "(%d) "%self.descendants + str(self.content)
         return str(self.content)
     def __repr__(self):
         return "N()"
@@ -254,12 +192,6 @@ class Node():
         elif self.parent:
             return self.parent.rnext(self)
         return None
-
-    def next(self):
-        n = self.depth_first_walk()
-        if not n:
-            return self
-        return n
 
     def depth_first_walk(self):
         if self.children:
@@ -285,21 +217,5 @@ class Node():
             self.iter_index = n
             return n
         raise StopIteration
-
-    def left(self):
-        if not self.children:
-            return self
-        return self.children[-1].left()
-
-    def rprev(self, child):
-        i = self.children.index(child)        
-        if i == 0:
-            return self
-        return self.children[i-1].left()
-
-    def prev(self):
-        if not self.parent:
-            return self
-        return self.parent.rprev(self)
 
     
