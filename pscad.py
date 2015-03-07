@@ -11,7 +11,7 @@ from pretty import fabulous, addstr
 
 UNDO_CAP = 1000
 SPACE_PER_INDENT = 4
-HELP_STRING = "yYxXpPgGzZ *!#% duitrs"
+HELP_STRING = "yYxXpPgGzZ *!#%/ duitrs"
 
 palette = [
     ('default', 'white', ''),
@@ -119,6 +119,8 @@ class SelectText(urwid.Widget):
             self.toggle_modifier("#")
         elif key == '%':
             self.toggle_modifier("%")
+        elif key == '/':
+            self.toggle_comment()
         else:
             return key
 
@@ -148,6 +150,13 @@ class SelectText(urwid.Widget):
             elif c == char:
                  self.node.content = t.replace(char, "", 1)
                  return
+
+    def toggle_comment(self):
+        t = self.node.content
+        if t.startswith("//"):
+            self.node.content = t[2:]
+        else:
+            self.node.content = "//"+t
                  
 class TreeListBox(urwid.ListBox):
     def __init__(self, manager, indent_width):
