@@ -126,6 +126,7 @@ class SelectText(urwid.Widget):
     def handler(self, widget, newtext):
         ## TODO VALIDATE CONTENT, BRIGHT RED ON ERROR
         self.text.set_text(newtext)
+        self.node.content = newtext
 
     def get_cursor_coords(self, size):
         if self.showedit:
