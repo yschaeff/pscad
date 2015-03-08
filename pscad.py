@@ -22,19 +22,20 @@ palette = [
     ('bg', 'white', ''),]
 
 exps = [
-    re.compile(r"\s*//.*"),                         ## commment
-    re.compile(r"[!#%*\s]*\s*[$\w]+\s*=\s*.+"),              ## assignment
-    re.compile(r"[!#%*\s]*\s*\w+\s*\(.*\)\s*"),              ## call
+    re.compile(r"\s*//.*"),                                 ## commment
+    re.compile(r"[!#%*\s]*\s*[$\w]+\s*=\s*.+"),             ## assignment
+    re.compile(r"[!#%*\s]*\s*\w+\s*\(.*\)\s*"),             ## call
     re.compile(r"[!#%*\s]*\s*function(?:\s+\w+)?\s*\(.*\)\s*=\s*"),  ## func
-    re.compile(r"[!#%*\s]*\s*module\s+\w+\s*\([^;\)]*\)"),   ## block
-    re.compile(r"[!#%*\s]*\s*include\s+\s*\w+\s*\s*"),             ## include
-    re.compile(r"[!#%*\s]*\s*use\s+<\s*\w+\s*>\s*"),                 ## use
+    re.compile(r"[!#%*\s]*\s*module\s+\w+\s*\([^;\)]*\)"),  ## block
+    re.compile(r"[!#%*\s]*\s*include\s+<[\.\w/]+>\s*"),     ## include
+    re.compile(r"[!#%*\s]*\s*use\s+<[\.\w/]+>\s*"),         ## use
 ]
 
 # TODO
-# hotkeys for diff etc
 # fix fablous for function defs
-# match use <blah>
+# tab completion
+# contect help 
+# think about open new file/load file etc
 
 def is_balanced(text):
     pair = {")":"(", "]":"[", "}":"{"}
