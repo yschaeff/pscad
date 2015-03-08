@@ -21,10 +21,11 @@ def parse_scad(raw):
 
     ####
     ## Parse document, split in logical units
-    m = []
-    i = 0; j = 0
-    c = 0
-    gobble = False
+    m = [] #tuples (raw-text, type)
+    i = 0; j = 0 # i: index of first char of unprocessed command. j: index of first unprocessed char
+    c = 0 # number of opened brackets
+    gobble = False # if true consume everything till newline
+    gobble_nl = False
     while i < len(raw) and j < len(raw):
         while comments and j > comments[0][1]:
             comment,_ = comments.pop(0)
@@ -35,6 +36,15 @@ def parse_scad(raw):
         if ch == "=" and c == 0:
             #gobble all the way to ;
             gobble = True
+        if ch == " " and c == 0 and (raw[j-3:].startswith("use ") or raw[j-7:].startswith("include ")):
+            #gobble all the way to ;
+            gobble_nl = True
+        elif ch == "\n" and gobble_nl:
+            if c: raise(Exception("Unclosed bracket"))
+            m.append((raw[i:j], T_STAT))
+            m.append((raw[j:j+1], T_TERM))
+            gobble_nl = False
+            i = j+1
         elif ch == ";":
             if c: raise(Exception("Unclosed bracket"))
             if gobble:
@@ -52,7 +62,7 @@ def parse_scad(raw):
             if c: raise(Exception("Unclosed bracket"))
             m.append((raw[j:j+1], T_CLOSE))
             i = j+1
-        elif gobble:
+        elif gobble or gobble_nl:
             pass
         elif ch == "(":
             c += 1

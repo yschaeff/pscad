@@ -16,23 +16,25 @@ palette = [
     ('default', 'white', ''),
     ('edit', 'black', 'yellow'),
     ('error', 'white', 'dark red'),
+    ('error_select', 'white', 'dark magenta'),
     ('select', 'white', 'dark blue'),
     ('status', 'black', 'white'),
     ('bg', 'white', ''),]
 
 exps = [
     re.compile(r"\s*//.*"),                         ## commment
-    re.compile(r"\s*[$\w]+\s*=\s*.+"),              ## assignment
-    re.compile(r"\s*\w+\s*\(.*\)\s*"),              ## call
-    re.compile(r"\s*function(?:\s+\w+)?\s*\(.*\)\s*=\s*"),  ## func
-    re.compile(r"\s*module\s+\w+\s*\([^;\)]*\)"),   ## block
-    re.compile(r"\s*include\s+\w+\s*"),             ## include
-    re.compile(r"\s*use\s+\w+\s*"),                 ## use
+    re.compile(r"[!#%*\s]*\s*[$\w]+\s*=\s*.+"),              ## assignment
+    re.compile(r"[!#%*\s]*\s*\w+\s*\(.*\)\s*"),              ## call
+    re.compile(r"[!#%*\s]*\s*function(?:\s+\w+)?\s*\(.*\)\s*=\s*"),  ## func
+    re.compile(r"[!#%*\s]*\s*module\s+\w+\s*\([^;\)]*\)"),   ## block
+    re.compile(r"[!#%*\s]*\s*include\s+\s*\w+\s*\s*"),             ## include
+    re.compile(r"[!#%*\s]*\s*use\s+<\s*\w+\s*>\s*"),                 ## use
 ]
 
 # TODO
 # hotkeys for diff etc
 # fix fablous for function defs
+# match use <blah>
 
 def is_balanced(text):
     pair = {")":"(", "]":"[", "}":"{"}
@@ -170,8 +172,10 @@ class SelectText(urwid.Widget):
     def render(self, size, focus=False):
         if self.showedit:
             map2 = urwid.AttrMap(self.edit, 'edit')
-        elif focus:
+        elif focus and self.valid:
             map2 = urwid.AttrMap(self.text, 'select')
+        elif focus:
+            map2 = urwid.AttrMap(self.text, 'error_select')
         elif not self.valid:
             map2 = urwid.AttrMap(self.text, 'error')
         else:
