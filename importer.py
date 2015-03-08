@@ -36,7 +36,9 @@ def parse_scad(raw):
         if ch == "=" and c == 0:
             #gobble all the way to ;
             gobble = True
-        if ch == " " and c == 0 and (raw[j-3:].startswith("use ") or raw[j-7:].startswith("include ")):
+        if ch == " " and c == 0 and \
+                ((raw[j-3:].startswith("use ") and j-3>=1) or \
+                (raw[j-7:].startswith("include ") and i-7>=7)):
             #gobble all the way to ;
             gobble_nl = True
         elif ch == "\n" and gobble_nl:
