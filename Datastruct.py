@@ -198,10 +198,7 @@ class Node():
             return self.children[0]
         elif not self.parent:
             return self
-        next = self.parent.rnext(self)
-        if next:
-            return next
-        return None
+        return self.parent.rnext(self)
 
     def __iter__(self):
         self.__start_iter = True

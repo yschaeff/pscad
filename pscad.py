@@ -13,26 +13,38 @@ SPACE_PER_INDENT = 4
 HELP_STRING = "yYxXpPgGzZaA *!#%/ dDuUiItTrRsS"
 
 palette = [
-    ('default', 'white', ''),
-    ('edit', 'black', 'yellow'),
+    #~ ('default', 'white', ''), #bgs
+    ## selections
+    ('edit', 'white,underline', ''),
+    ('edit_select', 'white,underline', 'dark blue'),
     ('error', 'white', 'dark red'),
     ('error_select', 'white', 'dark magenta'),
     ('select', 'white', 'dark blue'),
-    ('status', 'black', 'white'),
-    ('bg', 'white', ''),]
+    ## misc
+    ('status', 'white,standout', 'black'),
+    ('bg', 'white', ''),
+    ## text
+    ('comment', 'dark cyan', ''),
+    ('modifier', 'brown,bold', ''),
+    ('var', 'white', ''),
+    ('=', 'dark red', ''),
+    ('stat', 'default', ''),
+    ('name', 'default,bold', ''),
+    ('keyword', 'dark blue,bold', ''),
+    ]
 
 exps = [
     re.compile(r"\s*//.*"),                                 ## commment
-    re.compile(r"[!#%*\s]*\s*[$\w]+\s*=\s*.+"),             ## assignment
-    re.compile(r"[!#%*\s]*\s*\w+\s*\(.*\)\s*"),             ## call
-    re.compile(r"[!#%*\s]*\s*function(?:\s+\w+)?\s*\(.*\)\s*=\s*"),  ## func
-    re.compile(r"[!#%*\s]*\s*module\s+\w+\s*\([^;\)]*\)"),  ## block
-    re.compile(r"[!#%*\s]*\s*include\s+<[\.\w/]+>\s*"),     ## include
-    re.compile(r"[!#%*\s]*\s*use\s+<[\.\w/]+>\s*"),         ## use
+    re.compile(r"[!#%*\s]*\s*[$\w]+\s*=\s*.+$"),             ## assignment
+    re.compile(r"[!#%*\s]*\s*\w+\s*\(.*\)\s*$"),             ## call
+    re.compile(r"[!#%*\s]*\s*function(?:\s+\w+)?\s*\(.*\)\s*=\s*.*$"),  ## func
+    re.compile(r"[!#%*\s]*\s*module\s+\w+\s*\([^;\)]*\)\s*$"),  ## block
+    re.compile(r"[!#%*\s]*\s*include\s+<[\.\w/]+>\s*$"),     ## include
+    re.compile(r"[!#%*\s]*\s*use\s+<[\.\w/]+>\s*$"),         ## use
 ]
 
 # TODO
-# fix fablous for function defs
+# commandline help
 # tab completion
 # contect help 
 # think about open new file/load file etc
@@ -44,6 +56,8 @@ def is_balanced(text):
         if c in pair.values():
             stack.append(c)
         elif c in pair.keys():
+            if not stack:
+                return False
             p = stack.pop()
             if p != pair[c]:
                 return False
@@ -58,15 +72,54 @@ def is_valid(text):
             return True
     return False
 
+class ColorText(urwid.Text):
+    rc = re.compile(r"(\s*//.*$)")
+    ra = re.compile(r"([!#%*\s]*\s*)([$\w]+\s*)(=\s*)(.+$)")
+    rb = re.compile(r"([!#%*\s]*\s*)(\w+\s*)(\()(.*)(\)\s*$)")
+    rf = re.compile(r"([!#%*\s]*\s*)(function)((?:\s+\w+)?\s*)(\()(.*)(\)\s*)(=\s*)(.*$)")
+    rm = re.compile(r"([!#%*\s]*\s*)(module\s+)(\w+\s*)(\()([^;\)]*)(\)\s*$)")
+    ri = re.compile(r"([!#%*\s]*\s*)(include\s+)(<)([\.\w/]+)(>\s*$)")
+    ru = re.compile(r"([!#%*\s]*\s*)(use\s+)(<)([\.\w/]+)(>\s*$)")
+
+    def set_text(self, input_text):
+
+        exps = {
+            ColorText.rc:['comment'],
+            ColorText.ra:['modifier', 'var', '=', 'stat'],
+            ColorText.rb:['modifier', 'name', '=', 'stat', '='],
+            ColorText.rf:['modifier', 'keyword', 'name', '=', 'stat', '=', '=', 'stat'],
+            ColorText.rm:['modifier', 'keyword', 'name', '=', 'stat', '='],
+            ColorText.ri:['modifier', 'keyword', '=', 'stat', '='],
+            ColorText.ru:['modifier', 'keyword', '=', 'stat', '=']
+        }
+
+        text = input_text
+        for r,c in exps.items():
+            m = r.match(input_text)
+            if not m: continue
+            text = []
+            for i,g in enumerate(m.groups()):
+                if g: text.append((c[i], g))
+            break
+        return super(ColorText, self).set_text(text)
+    
+    def render(self, size, focus=False):
+        if focus:
+            text = [('select', self.text)]
+            w = urwid.Text(text)
+            w.set_layout('left', 'clip')
+            return w.render(size, focus)
+        return super(ColorText, self).render(size, focus)
+        
 class SelectText(urwid.Widget):
     def __init__(self, node, treelist, buf):
         super(urwid.Widget, self).__init__()
         self.edit = urwid.Edit("", node.content)
-        self.text = urwid.Text(node.content)
-        # do not wrap
-        self.text.set_layout('left', 'clip')
+        self.text = ColorText(node.content)
+        self.text.set_layout('left', 'clip') # do not wrap
         self.edit.set_layout('left', 'clip')
-        key = urwid.connect_signal(self.edit, 'change', SelectText.handler, user_args=[self])
+        key = urwid.connect_signal(self.edit, 'change',
+            SelectText.handler, user_args=[self])
         self.showedit = 0
         self.node = node
         self.treelist = treelist
@@ -87,6 +140,13 @@ class SelectText(urwid.Widget):
 
     def handler(self, widget, newtext):
         self.node.content = newtext.strip()
+        # in case we don't rebuild tree:
+        self.text.set_text(self.node.content)
+
+    def reset(self):
+        if self.showedit:
+            self.showedit = 0
+            self._invalidate()
 
     def get_cursor_coords(self, size):
         if self.showedit:
@@ -172,15 +232,11 @@ class SelectText(urwid.Widget):
 
     def render(self, size, focus=False):
         if self.showedit:
-            map2 = urwid.AttrMap(self.edit, 'edit')
-        elif focus and self.valid:
-            map2 = urwid.AttrMap(self.text, 'select')
-        elif focus:
-            map2 = urwid.AttrMap(self.text, 'error_select')
-        elif not self.valid:
-            map2 = urwid.AttrMap(self.text, 'error')
+            map2 = urwid.AttrMap(self.edit, 'edit', 'edit_select')
+        elif self.valid:
+            map2 = urwid.AttrMap(self.text, 'default', 'select')
         else:
-            map2 = urwid.AttrMap(self.text, 'default')
+            map2 = urwid.AttrMap(self.text, 'error', 'error_select')
         return map2.render(size, focus)
 
     def toggle_modifier(self, char):
@@ -208,7 +264,6 @@ class TreeListBox(urwid.ListBox):
         self.manager = manager
         body = urwid.SimpleFocusListWalker([])
         self.indent = indent_width;
-        self.d = 0
         self.update()
         self.buf = Clippy()
         super(TreeListBox, self).__init__(body)
@@ -234,19 +289,13 @@ class TreeListBox(urwid.ListBox):
             self.body.extend(tree_text)
             if pos < len(self.body):
                 self.focus_position = pos
-            self.d+=1
         canvas = super(TreeListBox, self).render(size, focus)
         return canvas
 
     def keypress(self, size, key):
-        global status
         key = super(TreeListBox, self).keypress(size, key)
         if key == 'esc':
-            for n in self.body:
-                w = n._original_widget
-                if w.showedit:
-                    w.showedit = 0
-                    w._invalidate()
+            [n._original_widget.reset() for n in self.body]
             return None
         elif key == 'z':
             if self.manager.undo():

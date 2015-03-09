@@ -132,7 +132,7 @@ def export_scad(filename, tree):
     parent_stack = []
     n = tree.depth_first_walk()
     l = 0
-    while n and n != tree:
+    for n in tree:
         while parent_stack and parent_stack[-1] != n.parent:
             p = parent_stack.pop()
             l -= 1
@@ -152,7 +152,6 @@ def export_scad(filename, tree):
         else:
             f.write("%s;\n"%prefix)
 
-        n = n.depth_first_walk()
     while parent_stack:
         n = parent_stack.pop()
         l -= 1
