@@ -300,6 +300,7 @@ class TreeListBox(urwid.ListBox):
 
     def keypress(self, size, key):
         key = super(TreeListBox, self).keypress(size, key)
+        manager.status(".")
         if key == 'esc':
             [n._original_widget.reset() for n in self.body]
             return None
@@ -313,6 +314,12 @@ class TreeListBox(urwid.ListBox):
                 self.update_tree = True
                 self._invalidate()
             return None
+        elif key == 'q':
+            if self.manager.saved:
+                raise urwid.ExitMainLoop()
+            else:
+                manager.status("Unsaved document, use Q to force quit.")
+            return None
         return key
 
 def show_or_exit(key):
@@ -320,8 +327,10 @@ def show_or_exit(key):
         raise urwid.ExitMainLoop()
 
 class Manager():
-    def __init__(self, argv):
+    def __init__(self, argv, status_text):
         self.undoer = Undo(UNDO_CAP)
+        self.saved = False
+        self.status_text = status_text
         if len(argv) == 1:
             self.tree = Node("Document root")
             self.exportfile = None
@@ -332,12 +341,18 @@ class Manager():
             self.tree = importer.import_scad(argv[1])
             self.exportfile = argv[2]
 
+    def status(self, text):
+        self.status_text.set_text(text)
+
     def checkpoint(self, undo=True):
         if undo:
             self.undoer.store(self.tree)
         if self.exportfile:
             if importer.export_scad(self.exportfile, self.tree):
                 error("failed to export")
+            self.saved = True
+        else:
+            self.saved = False
 
     def undo(self):
         r = self.undoer.undo()
@@ -364,7 +379,7 @@ if __name__ == "__main__":
     footer = urwid.Pile([status, helptext])
     footer_pretty = urwid.AttrMap(footer, 'status')
 
-    manager = Manager(argv)
+    manager = Manager(argv, status)
     tree_list = TreeListBox(manager, SPACE_PER_INDENT)
     body = urwid.AttrMap(tree_list, 'bg')
 
