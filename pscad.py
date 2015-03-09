@@ -11,6 +11,7 @@ from undo import Undo
 UNDO_CAP = 1000
 SPACE_PER_INDENT = 4
 HELP_STRING = "yYxXpPgGzZaA *!#%/ dDuUiItTrRsS"
+NEW_LINE_CONTENT = ""
 
 palette = [
     #~ ('default', 'white', ''), #bgs
@@ -34,7 +35,8 @@ palette = [
     ]
 
 exps = [
-    re.compile(r"\s*//.*"),                                 ## commment
+    re.compile(r"^\s*$"),                                    ## empty
+    re.compile(r"\s*//.*"),                                  ## commment
     re.compile(r"[!#%*\s]*\s*[$\w]+\s*=\s*.+$"),             ## assignment
     re.compile(r"[!#%*\s]*\s*\w+\s*\(.*\)\s*$"),             ## call
     re.compile(r"[!#%*\s]*\s*function(?:\s+\w+)?\s*\(.*\)\s*=\s*.*$"),  ## func
@@ -48,6 +50,7 @@ exps = [
 # tab completion
 # contect help 
 # think about open new file/load file etc
+# on insert new line auto make edit box?
 
 def is_balanced(text):
     pair = {")":"(", "]":"[", "}":"{"}
@@ -73,6 +76,7 @@ def is_valid(text):
     return False
 
 class ColorText(urwid.Text):
+    rp = re.compile(r"^\s*$")
     rc = re.compile(r"(\s*//.*$)")
     ra = re.compile(r"([!#%*\s]*\s*)([$\w]+\s*)(=\s*)(.+$)")
     rb = re.compile(r"([!#%*\s]*\s*)(\w+\s*)(\()(.*)(\)\s*$)")
@@ -84,19 +88,21 @@ class ColorText(urwid.Text):
     def set_text(self, input_text):
 
         exps = {
-            ColorText.rc:['comment'],
-            ColorText.ra:['modifier', 'var', '=', 'stat'],
-            ColorText.rb:['modifier', 'name', '=', 'stat', '='],
-            ColorText.rf:['modifier', 'keyword', 'name', '=', 'stat', '=', '=', 'stat'],
-            ColorText.rm:['modifier', 'keyword', 'name', '=', 'stat', '='],
-            ColorText.ri:['modifier', 'keyword', '=', 'stat', '='],
-            ColorText.ru:['modifier', 'keyword', '=', 'stat', '=']
+            ColorText.rp: None,
+            ColorText.rc: ['comment'],
+            ColorText.ra: ['modifier', 'var', '=', 'stat'],
+            ColorText.rb: ['modifier', 'name', '=', 'stat', '='],
+            ColorText.rf: ['modifier', 'keyword', 'name', '=', 'stat', '=', '=', 'stat'],
+            ColorText.rm: ['modifier', 'keyword', 'name', '=', 'stat', '='],
+            ColorText.ri: ['modifier', 'keyword', '=', 'stat', '='],
+            ColorText.ru: ['modifier', 'keyword', '=', 'stat', '=']
         }
 
         text = input_text
         for r,c in exps.items():
             m = r.match(input_text)
             if not m: continue
+            if not c: break
             text = []
             for i,g in enumerate(m.groups()):
                 if g: text.append((c[i], g))
@@ -221,9 +227,9 @@ class SelectText(urwid.Widget):
         elif key == 'S':
             self.node.merge_inner(Node("scale([0, 0, 0])"))
         elif key == 'a':
-            self.node.merge_before(Node("//", True))
+            self.node.merge_before(Node(NEW_LINE_CONTENT, True))
         elif key == 'A':
-            self.node.merge_after(Node("//", True))
+            self.node.merge_after(Node(NEW_LINE_CONTENT, True))
         else:
             return key
 
