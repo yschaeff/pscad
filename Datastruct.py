@@ -214,5 +214,3 @@ class Node():
             self.iter_index = n
             return n
         raise StopIteration
-
-    

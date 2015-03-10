@@ -34,16 +34,25 @@ palette = [
     ('keyword', 'dark blue,bold', ''),
     ]
 
-exps = [
-    re.compile(r"^\s*$"),                                    ## empty
-    re.compile(r"\s*//.*"),                                  ## commment
-    re.compile(r"[!#%*\s]*\s*[$\w]+\s*=\s*.+$"),             ## assignment
-    re.compile(r"[!#%*\s]*\s*\w+\s*\(.*\)\s*$"),             ## call
-    re.compile(r"[!#%*\s]*\s*function(?:\s+\w+)?\s*\(.*\)\s*=\s*.*$"),  ## func
-    re.compile(r"[!#%*\s]*\s*module\s+\w+\s*\([^;\)]*\)\s*$"),  ## block
-    re.compile(r"[!#%*\s]*\s*include\s+<[\.\w/]+>\s*$"),     ## include
-    re.compile(r"[!#%*\s]*\s*use\s+<[\.\w/]+>\s*$"),         ## use
-]
+rp = re.compile(r"^\s*$")
+rc = re.compile(r"(\s*//.*$)")
+ra = re.compile(r"([!#%*\s]*\s*)([$\w]+\s*)(=\s*)(.+$)")
+rb = re.compile(r"([!#%*\s]*\s*)(\w+\s*)(\()(.*)(\)\s*$)")
+rf = re.compile(r"([!#%*\s]*\s*)(function)((?:\s+\w+)?\s*)(\()(.*)(\)\s*)(=\s*)(.*$)")
+rm = re.compile(r"([!#%*\s]*\s*)(module\s+)(\w+\s*)(\()([^;\)]*)(\)\s*$)")
+ri = re.compile(r"([!#%*\s]*\s*)(include\s+)(<)([\.\w/]+)(>\s*$)")
+ru = re.compile(r"([!#%*\s]*\s*)(use\s+)(<)([\.\w/]+)(>\s*$)")
+
+exps = {
+    rp: None,
+    rc: ['comment'],
+    ra: ['modifier', 'var', '=', 'stat'],
+    rb: ['modifier', 'name', '=', 'stat', '='],
+    rf: ['modifier', 'keyword', 'name', '=', 'stat', '=', '=', 'stat'],
+    rm: ['modifier', 'keyword', 'name', '=', 'stat', '='],
+    ri: ['modifier', 'keyword', '=', 'stat', '='],
+    ru: ['modifier', 'keyword', '=', 'stat', '=']
+}
 
 # TODO
 # commandline help
@@ -69,34 +78,14 @@ def is_valid(text):
     global exps
     if not is_balanced(text):
         return False
-    for e in exps:
+    for e in exps.keys():
         if e.match(text):
             return True
     return False
 
 class ColorText(urwid.Text):
-    rp = re.compile(r"^\s*$")
-    rc = re.compile(r"(\s*//.*$)")
-    ra = re.compile(r"([!#%*\s]*\s*)([$\w]+\s*)(=\s*)(.+$)")
-    rb = re.compile(r"([!#%*\s]*\s*)(\w+\s*)(\()(.*)(\)\s*$)")
-    rf = re.compile(r"([!#%*\s]*\s*)(function)((?:\s+\w+)?\s*)(\()(.*)(\)\s*)(=\s*)(.*$)")
-    rm = re.compile(r"([!#%*\s]*\s*)(module\s+)(\w+\s*)(\()([^;\)]*)(\)\s*$)")
-    ri = re.compile(r"([!#%*\s]*\s*)(include\s+)(<)([\.\w/]+)(>\s*$)")
-    ru = re.compile(r"([!#%*\s]*\s*)(use\s+)(<)([\.\w/]+)(>\s*$)")
-
+    global exps
     def set_text(self, input_text):
-
-        exps = {
-            ColorText.rp: None,
-            ColorText.rc: ['comment'],
-            ColorText.ra: ['modifier', 'var', '=', 'stat'],
-            ColorText.rb: ['modifier', 'name', '=', 'stat', '='],
-            ColorText.rf: ['modifier', 'keyword', 'name', '=', 'stat', '=', '=', 'stat'],
-            ColorText.rm: ['modifier', 'keyword', 'name', '=', 'stat', '='],
-            ColorText.ri: ['modifier', 'keyword', '=', 'stat', '='],
-            ColorText.ru: ['modifier', 'keyword', '=', 'stat', '=']
-        }
-
         text = input_text
         for r,c in exps.items():
             m = r.match(input_text)
@@ -318,6 +307,7 @@ class TreeListBox(urwid.ListBox):
             ## then set outfile. Else just write.
             ## on W always ask path
             if self.manager.write():
+                manager.saved = True
                 manager.status("File written")
             else:
                 manager.status("Error writing file, no output file set?")
@@ -339,6 +329,7 @@ class Manager():
         self.undoer = Undo(UNDO_CAP)
         self.saved = False
         self.status_text = status_text
+        self.infile = infile
         self.exportfile = outfile
         self.autosave = (outfile != None)
         self.tree = importer.import_scad(infile)
@@ -349,6 +340,9 @@ class Manager():
     def write(self):
         if self.exportfile:
             if not importer.export_scad(self.exportfile, self.tree):
+                return True
+        else:
+            if not importer.export_scad(self.infile, self.tree):
                 return True
         return False
 
