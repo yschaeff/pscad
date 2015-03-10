@@ -1,8 +1,10 @@
 from Datastruct import Node
-import re
+import re, os.path
+
+ROOT = "Document Root"
 
 def parse_scad(raw):
-    tree = Node("Document Root")
+    tree = Node(ROOT)
 
     re_comment = re.compile(r"//.*\n")
 
@@ -81,7 +83,7 @@ def parse_scad(raw):
     if c:
         raise(Exception("Extra close bracket"))
 
-    tree = Node("Document Root")
+    tree = Node(ROOT)
     s = [[tree, 0]]
     for i,t in m:
         #~ print("- "+str(i).strip())
@@ -109,8 +111,10 @@ def parse_scad(raw):
     return tree
 
 def import_scad(filename):
-    r = re.compile(r"\s+")
+    if not os.path.isfile(filename):
+        return Node(ROOT)
 
+    r = re.compile(r"\s+")
     f = open(filename)
     raw = f.read()
     f.close()

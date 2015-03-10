@@ -50,7 +50,6 @@ exps = [
 # tab completion
 # contect help 
 # think about open new file/load file etc
-# on insert new line auto make edit box?
 
 def is_balanced(text):
     pair = {")":"(", "]":"[", "}":"{"}
@@ -314,6 +313,15 @@ class TreeListBox(urwid.ListBox):
                 self.update_tree = True
                 self._invalidate()
             return None
+        elif key == 'w':
+            ## TODO if no outfile display new window ask for path
+            ## then set outfile. Else just write.
+            ## on W always ask path
+            if self.manager.write():
+                manager.status("File written")
+            else:
+                manager.status("Error writing file, no output file set?")
+            return None
         elif key == 'q':
             if self.manager.saved:
                 raise urwid.ExitMainLoop()
@@ -327,30 +335,31 @@ def show_or_exit(key):
         raise urwid.ExitMainLoop()
 
 class Manager():
-    def __init__(self, argv, status_text):
+    def __init__(self, infile, outfile, status_text):
         self.undoer = Undo(UNDO_CAP)
         self.saved = False
         self.status_text = status_text
-        if len(argv) == 1:
-            self.tree = Node("Document root")
-            self.exportfile = None
-        elif len(argv) == 2:
-            self.tree = importer.import_scad(argv[1])
-            self.exportfile = None
-        else:
-            self.tree = importer.import_scad(argv[1])
-            self.exportfile = argv[2]
+        self.exportfile = outfile
+        self.autosave = (outfile != None)
+        self.tree = importer.import_scad(infile)
 
     def status(self, text):
         self.status_text.set_text(text)
 
+    def write(self):
+        if self.exportfile:
+            if not importer.export_scad(self.exportfile, self.tree):
+                return True
+        return False
+
     def checkpoint(self, undo=True):
         if undo:
             self.undoer.store(self.tree)
-        if self.exportfile:
-            if importer.export_scad(self.exportfile, self.tree):
+        if self.autosave:
+            if self.write():
+                self.saved = True
+            else:
                 error("failed to export")
-            self.saved = True
         else:
             self.saved = False
 
@@ -373,13 +382,29 @@ class Manager():
     def get_tree(self):
         return self.tree
 
+def handle_commandline():
+    import argparse
+    parser = argparse.ArgumentParser(
+            description="Python OpenSCAD thingy",
+            epilog="Yuri Schaeffer - MIT License")
+    parser.add_argument('infile', metavar='IN_FILE', 
+            help="File to read")
+    parser.add_argument('-o', '--outfile', metavar='OUT_FILE',
+            default=None,
+            help="File to keep up to date")
+    return parser.parse_args()
+
 if __name__ == "__main__":
+    ##parse cmdline
+    args = handle_commandline()
+    #~ print(a)
+
     status = urwid.Text("")
     helptext = urwid.Text(HELP_STRING)
     footer = urwid.Pile([status, helptext])
     footer_pretty = urwid.AttrMap(footer, 'status')
 
-    manager = Manager(argv, status)
+    manager = Manager(args.infile, args.outfile, status)
     tree_list = TreeListBox(manager, SPACE_PER_INDENT)
     body = urwid.AttrMap(tree_list, 'bg')
 
