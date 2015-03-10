@@ -1,7 +1,7 @@
 from Datastruct import Node
 import re, os.path
 
-ROOT = "Document Root"
+ROOT = "// [Document Root]"
 
 def parse_scad(raw):
     tree = Node(ROOT)

@@ -7,6 +7,7 @@ import importer
 from Datastruct import Node
 from clipboard import Clippy
 from undo import Undo
+from collections import namedtuple
 
 UNDO_CAP = 1000
 SPACE_PER_INDENT = 4
@@ -19,7 +20,7 @@ palette = [
     ('edit', 'white,underline', ''),
     ('edit_select', 'white,underline', 'dark blue'),
     ('error', 'white', 'dark red'),
-    ('error_select', 'white', 'dark magenta'),
+    ('error_select', 'white', 'dark red'),
     ('select', 'white', 'dark blue'),
     ## misc
     ('status', 'white,standout', 'black'),
@@ -33,6 +34,7 @@ palette = [
     ('name', 'default,bold', ''),
     ('keyword', 'dark blue,bold', ''),
     ]
+
 
 rp = re.compile(r"^\s*$")
 rc = re.compile(r"(\s*//.*$)")
@@ -51,7 +53,19 @@ exps = {
     rf: ['modifier', 'keyword', 'name', '=', 'stat', '=', '=', 'stat'],
     rm: ['modifier', 'keyword', 'name', '=', 'stat', '='],
     ri: ['modifier', 'keyword', '=', 'stat', '='],
-    ru: ['modifier', 'keyword', '=', 'stat', '=']
+    ru: ['modifier', 'keyword', '=', 'stat', '='] }
+
+NodeType = namedtuple('NodeType', ['name', 'has_children'])
+
+exp_info = {
+    rp: NodeType(     "EMPTY", False),
+    rc: NodeType(   "COMMENT", False),
+    ra: NodeType("ASSIGNMENT", False),
+    rb: NodeType(     "BLOCK",  True), ## only has children if defined
+    rf: NodeType(  "FUNCTION", False),
+    rm: NodeType(    "MODULE",  True),
+    ri: NodeType(   "INCLUDE", False),
+    ru: NodeType(       "USE", False)
 }
 
 # TODO
@@ -84,22 +98,32 @@ def is_valid(text):
     return False
 
 class ColorText(urwid.Text):
-    global exps
+    def __init__(self, content, valid):
+        self.valid = valid
+        return super(ColorText, self).__init__(content)
+    
     def set_text(self, input_text):
-        text = input_text
-        for r,c in exps.items():
-            m = r.match(input_text)
-            if not m: continue
-            if not c: break
-            text = []
-            for i,g in enumerate(m.groups()):
-                if g: text.append((c[i], g))
-            break
+        global exps
+        if self.valid:
+            text = input_text
+            for r,c in exps.items():
+                m = r.match(input_text)
+                if not m: continue
+                if not c: break
+                text = []
+                for i,g in enumerate(m.groups()):
+                    if g: text.append((c[i], g))
+                break
+        else:
+            text = [('error', input_text)]
         return super(ColorText, self).set_text(text)
     
     def render(self, size, focus=False):
         if focus:
-            text = [('select', self.text)]
+            if self.valid:
+                text = [('select', self.text)]
+            else:
+                text = [('error_select', self.text)]
             w = urwid.Text(text)
             w.set_layout('left', 'clip')
             return w.render(size, focus)
@@ -107,9 +131,10 @@ class ColorText(urwid.Text):
         
 class SelectText(urwid.Widget):
     def __init__(self, node, treelist, buf):
-        super(urwid.Widget, self).__init__()
+        super(SelectText, self).__init__()
+        self.valid = is_valid(node.content)
         self.edit = urwid.Edit("", node.content)
-        self.text = ColorText(node.content)
+        self.text = ColorText(node.content, self.valid)
         self.text.set_layout('left', 'clip') # do not wrap
         self.edit.set_layout('left', 'clip')
         key = urwid.connect_signal(self.edit, 'change',
@@ -119,7 +144,6 @@ class SelectText(urwid.Widget):
         self.treelist = treelist
         self.indent = node.depth()
         self.buf = buf
-        self.valid = is_valid(node.content)
 
     def rows(self, size, focus=False):
         return 1
@@ -227,23 +251,20 @@ class SelectText(urwid.Widget):
     def render(self, size, focus=False):
         if self.showedit:
             map2 = urwid.AttrMap(self.edit, 'edit', 'edit_select')
-        elif self.valid:
-            map2 = urwid.AttrMap(self.text, 'default', 'select')
         else:
-            map2 = urwid.AttrMap(self.text, 'error', 'error_select')
+            map2 = urwid.AttrMap(self.text, 'default', 'select')
         return map2.render(size, focus)
 
     def toggle_modifier(self, char):
         mods = "*!#%"
-        if char not in mods:
-            return
+        assert(char in mods)
         t = self.node.content
-        for c in t:
+        for i, c in enumerate(t):
             if c not in mods:
-                self.node.content = char+t
+                self.node.content = char + t[:i] + " " + t[i:].strip()
                 return
             elif c == char:
-                 self.node.content = t.replace(char, "", 1)
+                 self.node.content = t.replace(char, "", 1).strip()
                  return
 
     def toggle_comment(self):
