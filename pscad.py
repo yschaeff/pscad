@@ -2,17 +2,23 @@
 
 import curses, re, urwid
 from sys import argv
+from collections import namedtuple
 
+## project specific includes
 import importer
 from Datastruct import Node
 from clipboard import Clippy
 from undo import Undo
-from collections import namedtuple
 
-UNDO_CAP = 1000
+UNDO_CAP = 1000 ## number of undo levels
 SPACE_PER_INDENT = 4
-HELP_STRING = "yYxXpPgGzZaA *!#%/ dDuUiItTrRsS"
-NEW_LINE_CONTENT = ""
+HELP_STRING = "yYxXpPgGzZaA *!#%/ dDuUiItTrRsS wqQ"
+NEW_LINE_CONTENT = "//"
+
+SPACE    = 'space'
+ARGUMENT = 'args'
+COMMENT  = 'comment'
+MODIFIER = 'modifier'
 
 palette = [
     #~ ('default', 'white', ''), #bgs
@@ -26,34 +32,40 @@ palette = [
     ('status', 'white,standout', 'black'),
     ('bg', 'white', ''),
     ## text
-    ('comment', 'dark cyan', ''),
-    ('modifier', 'brown,bold', ''),
+    (COMMENT, 'dark cyan', ''),
+    (MODIFIER, 'brown,bold', ''),
     ('var', 'white', ''),
     ('=', 'dark red', ''),
+    ('(', 'dark red', ''),
+    (')', 'dark red', ''),
+    ('<', 'dark red', ''),
+    ('>', 'dark red', ''),
+    (SPACE, 'default', ''),
     ('stat', 'default', ''),
+    (ARGUMENT, 'default', ''),
+    ('path', 'default', ''),
     ('name', 'default,bold', ''),
     ('keyword', 'dark blue,bold', ''),
     ]
 
-
 rp = re.compile(r"^\s*$")
-rc = re.compile(r"(\s*//.*$)")
-ra = re.compile(r"([!#%*\s]*\s*)([$\w]+\s*)(=\s*)(.+$)")
-rb = re.compile(r"([!#%*\s]*\s*)(\w+\s*)(\()(.*)(\)\s*$)")
-rf = re.compile(r"([!#%*\s]*\s*)(function)((?:\s+\w+)?\s*)(\()(.*)(\)\s*)(=\s*)(.*$)")
-rm = re.compile(r"([!#%*\s]*\s*)(module\s+)(\w+\s*)(\()([^;\)]*)(\)\s*$)")
-ri = re.compile(r"([!#%*\s]*\s*)(include\s+)(<)([\.\w/]+)(>\s*$)")
-ru = re.compile(r"([!#%*\s]*\s*)(use\s+)(<)([\.\w/]+)(>\s*$)")
+rc = re.compile(r"^\s*(//.*$)")
+ra = re.compile(r"^\s*([!#%*\s]*)\s*([$\w]+)\s*(=)\s*(.+$)")
+rb = re.compile(r"^\s*([!#%*\s]*)\s*(\w+)\s*(\()\s*(.*?)\s*(\))\s*$")
+rf = re.compile(r"^\s*([!#%*\s]*)\s*(function)\s+(\w+)\s*(\()\s*(.*?)\s*(\))\s*(=)\s*(.*$)")
+rm = re.compile(r"^\s*([!#%*\s]*)\s*(module)\s+(\w+)\s*(\()\s*((?:[^;\)]*[^\s])?)\s*(\)\s*$)")
+ri = re.compile(r"^\s*([!#%*\s]*)\s*(include)\s+(<)\s*([\.\w/]+)\s*(>\s*$)")
+ru = re.compile(r"^\s*([!#%*\s]*)\s*(use)\s+(<)\s*([\.\w/]+)\s*(>\s*$)")
 
 exps = {
-    rp: None,
-    rc: ['comment'],
-    ra: ['modifier', 'var', '=', 'stat'],
-    rb: ['modifier', 'name', '=', 'stat', '='],
-    rf: ['modifier', 'keyword', 'name', '=', 'stat', '=', '=', 'stat'],
-    rm: ['modifier', 'keyword', 'name', '=', 'stat', '='],
-    ri: ['modifier', 'keyword', '=', 'stat', '='],
-    ru: ['modifier', 'keyword', '=', 'stat', '='] }
+    rp: [],
+    rc: [COMMENT],
+    ra: [MODIFIER, 'var', '=', 'stat'],
+    rb: [MODIFIER, 'name', '(', ARGUMENT, ')'],
+    rf: [MODIFIER, 'keyword', 'name', '(', ARGUMENT, ')', '=', 'stat'],
+    rm: [MODIFIER, 'keyword', 'name', '(', ARGUMENT, ')'],
+    ri: [MODIFIER, 'keyword', '<', 'path', '>'],
+    ru: [MODIFIER, 'keyword', '<', 'path', '>'] }
 
 NodeType = namedtuple('NodeType', ['name', 'has_children'])
 
@@ -100,8 +112,24 @@ def is_valid(text):
 class ColorText(urwid.Text):
     def __init__(self, content, valid):
         self.valid = valid
-        return super(ColorText, self).__init__(content)
-    
+        super().__init__(content)
+
+    def parse(ttype, text):
+        if text == "":
+            return ""
+        elif ttype == SPACE:
+            return " "
+        elif ttype == MODIFIER:
+            return text.translate({ord(' '): None}) + " "
+        elif ttype == 'keyword':
+            return text + " "
+        elif ttype == '=':
+            return " = "
+        elif ttype == ARGUMENT:
+            return text.strip() #stub
+        else:
+            return text.strip()
+        
     def set_text(self, input_text):
         global exps
         if self.valid:
@@ -112,11 +140,16 @@ class ColorText(urwid.Text):
                 if not c: break
                 text = []
                 for i,g in enumerate(m.groups()):
-                    if g: text.append((c[i], g))
+                    g = ColorText.parse(c[i], g)
+                    if g:
+                        text.append((c[i], g))
                 break
         else:
             text = [('error', input_text)]
-        return super(ColorText, self).set_text(text)
+        ## If we had a match but no printable groups text can be empty
+        if not text:
+            return super().set_text(input_text)
+        return super().set_text(text)
     
     def render(self, size, focus=False):
         if focus:
@@ -127,11 +160,11 @@ class ColorText(urwid.Text):
             w = urwid.Text(text)
             w.set_layout('left', 'clip')
             return w.render(size, focus)
-        return super(ColorText, self).render(size, focus)
+        return super().render(size, focus)
         
 class SelectText(urwid.Widget):
     def __init__(self, node, treelist, buf):
-        super(SelectText, self).__init__()
+        super().__init__()
         self.valid = is_valid(node.content)
         self.edit = urwid.Edit("", node.content)
         self.text = ColorText(node.content, self.valid)
@@ -157,9 +190,9 @@ class SelectText(urwid.Widget):
         return True
 
     def handler(self, widget, newtext):
-        self.node.content = newtext.strip()
-        # in case we don't rebuild tree:
-        self.text.set_text(self.node.content)
+        self.text.set_text(newtext)
+        ## assign back to node now newtext is cleaned
+        self.node.content = self.text.text
 
     def reset(self):
         if self.showedit:
@@ -266,6 +299,7 @@ class SelectText(urwid.Widget):
             elif c == char:
                  self.node.content = t.replace(char, "", 1).strip()
                  return
+        self.node.content = char + self.node.content
 
     def toggle_comment(self):
         t = self.node.content
@@ -281,7 +315,7 @@ class TreeListBox(urwid.ListBox):
         self.indent = indent_width;
         self.update_tree = True
         self.buf = Clippy()
-        super(TreeListBox, self).__init__(body)
+        super().__init__(body)
 
     def update(self):
         self.manager.checkpoint()
@@ -304,11 +338,11 @@ class TreeListBox(urwid.ListBox):
             self.body.extend(tree_text)
             if pos < len(self.body):
                 self.focus_position = pos
-        canvas = super(TreeListBox, self).render(size, focus)
+        canvas = super().render(size, focus)
         return canvas
 
     def keypress(self, size, key):
-        key = super(TreeListBox, self).keypress(size, key)
+        key = super().keypress(size, key)
         manager.status(".")
         if key == 'esc':
             [n._original_widget.reset() for n in self.body]

@@ -134,7 +134,6 @@ def export_scad(filename, tree):
         return 1
     f = open(filename, 'w')
     parent_stack = []
-    n = tree.depth_first_walk()
     l = 0
     for i, n in enumerate(tree):
         if i == 0: continue #our tree doesn't support slicing
