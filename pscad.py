@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-import curses, re, urwid
+import curses, urwid
 from sys import argv
-from collections import namedtuple
 
 ## project specific includes
 import importer
 from Datastruct import Node
 from clipboard import Clippy
 from undo import Undo
+import validation as val
 
 UNDO_CAP = 1000 ## number of undo levels
 SPACE_PER_INDENT = 4
@@ -46,38 +46,17 @@ palette = [
     ('path', 'default', ''),
     ('name', 'default,bold', ''),
     ('keyword', 'dark blue,bold', ''),
-    ]
-
-rp = re.compile(r"^\s*$")
-rc = re.compile(r"^\s*(//.*$)")
-ra = re.compile(r"^\s*([!#%*\s]*)\s*([$\w]+)\s*(=)\s*(.+$)")
-rb = re.compile(r"^\s*([!#%*\s]*)\s*(\w+)\s*(\()\s*(.*?)\s*(\))\s*$")
-rf = re.compile(r"^\s*([!#%*\s]*)\s*(function)\s+(\w+)\s*(\()\s*(.*?)\s*(\))\s*(=)\s*(.*$)")
-rm = re.compile(r"^\s*([!#%*\s]*)\s*(module)\s+(\w+)\s*(\()\s*((?:[^;\)]*[^\s])?)\s*(\)\s*$)")
-ri = re.compile(r"^\s*([!#%*\s]*)\s*(include)\s+(<)\s*([\.\w/]+)\s*(>\s*$)")
-ru = re.compile(r"^\s*([!#%*\s]*)\s*(use)\s+(<)\s*([\.\w/]+)\s*(>\s*$)")
+]
 
 exps = {
-    rp: [],
-    rc: [COMMENT],
-    ra: [MODIFIER, 'var', '=', 'stat'],
-    rb: [MODIFIER, 'name', '(', ARGUMENT, ')'],
-    rf: [MODIFIER, 'keyword', 'name', '(', ARGUMENT, ')', '=', 'stat'],
-    rm: [MODIFIER, 'keyword', 'name', '(', ARGUMENT, ')'],
-    ri: [MODIFIER, 'keyword', '<', 'path', '>'],
-    ru: [MODIFIER, 'keyword', '<', 'path', '>'] }
-
-NodeType = namedtuple('NodeType', ['name', 'has_children'])
-
-exp_info = {
-    rp: NodeType(     "EMPTY", False),
-    rc: NodeType(   "COMMENT", False),
-    ra: NodeType("ASSIGNMENT", False),
-    rb: NodeType(     "BLOCK",  True), ## only has children if defined
-    rf: NodeType(  "FUNCTION", False),
-    rm: NodeType(    "MODULE",  True),
-    ri: NodeType(   "INCLUDE", False),
-    ru: NodeType(       "USE", False)
+    val.r_empty     : [],
+    val.r_comment   : [COMMENT],
+    val.r_assignment: [MODIFIER, 'var', '=', 'stat'],
+    val.r_block     : [MODIFIER, 'name', '(', ARGUMENT, ')'],
+    val.r_function  : [MODIFIER, 'keyword', 'name', '(', ARGUMENT, ')', '=', 'stat'],
+    val.r_module    : [MODIFIER, 'keyword', 'name', '(', ARGUMENT, ')'],
+    val.r_include   : [MODIFIER, 'keyword', '<', 'path', '>'],
+    val.r_use       : [MODIFIER, 'keyword', '<', 'path', '>']
 }
 
 # TODO
@@ -85,29 +64,6 @@ exp_info = {
 # tab completion
 # contect help 
 # think about open new file/load file etc
-
-def is_balanced(text):
-    pair = {")":"(", "]":"[", "}":"{"}
-    stack = []
-    for c in text:
-        if c in pair.values():
-            stack.append(c)
-        elif c in pair.keys():
-            if not stack:
-                return False
-            p = stack.pop()
-            if p != pair[c]:
-                return False
-    return (len(stack) == 0)
-
-def is_valid(text):
-    global exps
-    if not is_balanced(text):
-        return False
-    for e in exps.keys():
-        if e.match(text):
-            return True
-    return False
 
 class ColorText(urwid.Text):
     def __init__(self, content, valid):
@@ -165,7 +121,7 @@ class ColorText(urwid.Text):
 class SelectText(urwid.Widget):
     def __init__(self, node, treelist, buf):
         super().__init__()
-        self.valid = is_valid(node.content)
+        self.valid = val.is_valid(node.content)
         self.edit = urwid.Edit("", node.content)
         self.text = ColorText(node.content, self.valid)
         self.text.set_layout('left', 'clip') # do not wrap
