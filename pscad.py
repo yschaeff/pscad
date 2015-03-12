@@ -279,7 +279,7 @@ class TreeListBox(urwid.ListBox):
         self.manager = manager
         body = urwid.SimpleFocusListWalker([])
         self.indent = indent_width;
-        self.update()
+        self.update_tree = True
         self.buf = Clippy()
         super(TreeListBox, self).__init__(body)
 
@@ -348,12 +348,13 @@ def show_or_exit(key):
 class Manager():
     def __init__(self, infile, outfile, status_text):
         self.undoer = Undo(UNDO_CAP)
-        self.saved = False
+        self.saved = True
         self.status_text = status_text
         self.infile = infile
         self.exportfile = outfile
         self.autosave = (outfile != None)
         self.tree = importer.import_scad(infile)
+        self.undoer.store(self.tree)
 
     def status(self, text):
         self.status_text.set_text(text)
@@ -412,7 +413,6 @@ def handle_commandline():
 if __name__ == "__main__":
     ##parse cmdline
     args = handle_commandline()
-    #~ print(a)
 
     status = urwid.Text("")
     helptext = urwid.Text(HELP_STRING)
