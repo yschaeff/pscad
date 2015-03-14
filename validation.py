@@ -48,3 +48,48 @@ def is_valid(text):
         if e.match(text):
             return True
     return False
+
+keywords = ['module', 'function', 'include', 'use', 'circle', 'square', 'polygon', 'text', 'sphere', 'cube', 'cylinder', 'polyhedron', 'Transformations', 'translate', 'rotate', 'scale', 'resize', 'mirror', 'multmatrix', 'color', 'offset', 'hull', 'minkowski', 'Boolean operations', 'union', 'difference', 'intersection', 'abs', 'sign', 'sin', 'cos', 'tan', 'acos', 'asin', 'atan', 'atan2', 'floor', 'round', 'ceil', 'ln', 'len', 'let', 'log', 'pow', 'sqrt', 'exp', 'rands', 'min', 'max', 'concat', 'lookup', 'str', 'chr', 'search', 'version', 'version_num', 'norm', 'cross', 'parent_module', 'echo', 'for ', 'intersection_for', 'if ', 'assign ', 'import', 'linear_extrude', 'rotate_extrude', 'surface', 'projection', 'render', 'children', '$fa', '$fs', '$fn', '$t', '$vpr', '$vpt', '$vpd', '$children']
+keywords.sort()
+
+def suggest(text):
+    space = text.rfind(" ")
+    if space != -1:
+        prefix = text[space+1:]
+    else:
+        prefix = text
+    r = []
+    for word in keywords:
+        if word.startswith(prefix):
+            r.append(word.strip())
+    return r
+
+def common(s1, s2):
+    i = 0
+    while i < len(s1) and i < len(s2):
+        if s1[i] != s2[i]: return i
+        i += 1
+    return i
+
+def complete(text):
+    space = text.rfind(" ")
+    if space != -1:
+        postfix = text[:space+1]
+        prefix = text[space+1:]
+    else:
+        postfix = ""
+        prefix = text
+        
+    s = suggest(prefix)
+    if prefix in s:
+        s.remove(prefix)
+    if len(s) == 0:
+        return text
+    elif len(s) == 1:
+        return postfix + s[0]
+    a = s[0]
+    b = s[1:]
+    c = [common(a, d) for d in b]
+    m = min(c)
+    return postfix + a[:m]
+    

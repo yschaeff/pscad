@@ -25,6 +25,7 @@ palette = [
     ## selections
     ('edit', 'white,underline', ''),
     ('edit_select', 'white,underline', 'dark blue'),
+    ('edit_suggest', 'brown,bold', 'dark blue'),
     ('error', 'white', 'dark red'),
     ('error_select', 'white', 'dark red'),
     ('select', 'white', 'dark blue'),
@@ -58,11 +59,11 @@ exps = {
     val.r_include   : [MODIFIER, 'keyword', '<', 'path', '>'],
     val.r_use       : [MODIFIER, 'keyword', '<', 'path', '>']
 }
+## regression test
+for re,l in exps.items(): assert(re.groups == len(l))
 
 # TODO
-# commandline help
-# tab completion
-# contect help 
+# context help
 # think about open new file/load file etc
 
 class ColorText(urwid.Text):
@@ -85,7 +86,7 @@ class ColorText(urwid.Text):
             return text.strip() #stub
         else:
             return text.strip()
-        
+
     def set_text(self, input_text):
         global exps
         if self.valid:
@@ -106,7 +107,7 @@ class ColorText(urwid.Text):
         if not text:
             return super().set_text(input_text)
         return super().set_text(text)
-    
+
     def render(self, size, focus=False):
         if focus:
             if self.valid:
@@ -117,12 +118,39 @@ class ColorText(urwid.Text):
             w.set_layout('left', 'clip')
             return w.render(size, focus)
         return super().render(size, focus)
-        
+
+class HelpEdit(urwid.Edit):
+    _sizing = frozenset(['flow'])
+
+    def __init__(self, text, content):
+        super().__init__(text, content)
+        self.suggest = None
+
+    def rows(self, size, focus=False):
+        if not self.suggest:
+            return 1
+        return 1 + self.suggest.rows(size, focus)
+
+    def keypress(self, size, key):
+        if key == 'tab':
+            newtext = val.complete(self.text)
+            self.set_edit_text(newtext)
+            self.move_cursor_to_coords(size, len(newtext), 0)
+            return None
+        return super().keypress(size, key)
+
+    def render(self, size, focus=False):
+        canvas = super().render(size, focus)
+        if not self.suggest:
+            return canvas
+        canvas2 = self.suggest.render(size)
+        return urwid.CanvasCombine([(canvas, True, True), (canvas2, None, False)])
+
 class SelectText(urwid.Widget):
     def __init__(self, node, treelist, buf):
         super().__init__()
         self.valid = val.is_valid(node.content)
-        self.edit = urwid.Edit("", node.content)
+        self.edit = HelpEdit("", node.content)
         self.text = ColorText(node.content, self.valid)
         self.text.set_layout('left', 'clip') # do not wrap
         self.edit.set_layout('left', 'clip')
@@ -135,6 +163,8 @@ class SelectText(urwid.Widget):
         self.buf = buf
 
     def rows(self, size, focus=False):
+        if self.showedit:
+            return self.edit.rows(size, focus)
         return 1
 
     def sizing(self):
@@ -146,6 +176,14 @@ class SelectText(urwid.Widget):
         return True
 
     def handler(self, widget, newtext):
+        ##TODO: on exact match show some usage info
+        suggestions = val.suggest(newtext)
+        if len(suggestions) == 0:
+            self.edit.suggest = None
+        else:
+            sug = "Suggestions: " + ", ".join(suggestions)
+            self.edit.suggest = urwid.Text(('edit_suggest', sug))
+
         self.text.set_text(newtext)
         ## assign back to node now newtext is cleaned
         self.node.content = self.text.text
@@ -168,10 +206,10 @@ class SelectText(urwid.Widget):
             if self.showedit == 0:
                 self.treelist.update()
             return None
-            
+
         if self.showedit:
             return self.edit.keypress(size, key)
-            
+
         ## in Text mode
         if key == 'g':              ## Be siblings parent
             self.node.gobble()
@@ -263,7 +301,7 @@ class SelectText(urwid.Widget):
             self.node.content = t[2:]
         else:
             self.node.content = "//"+t
-                 
+
 class TreeListBox(urwid.ListBox):
     def __init__(self, manager, indent_width):
         self.manager = manager
@@ -286,7 +324,7 @@ class TreeListBox(urwid.ListBox):
                 t = SelectText(node, self, self.buf)
                 p = urwid.Padding(t, align='left', width='pack', min_width=None, left=node.depth()*self.indent)
                 tree_text.append(p)
-            if len(self.body) > 0: 
+            if len(self.body) > 0:
                 pos = self.focus_position
             else:
                 pos = 0
@@ -376,7 +414,7 @@ class Manager():
             self.checkpoint(undo=False)
             return True
         return False
-        
+
     def redo(self):
         r = self.undoer.redo()
         if r:
@@ -393,7 +431,7 @@ def handle_commandline():
     parser = argparse.ArgumentParser(
             description="Python OpenSCAD thingy",
             epilog="Yuri Schaeffer - MIT License")
-    parser.add_argument('infile', metavar='IN_FILE', 
+    parser.add_argument('infile', metavar='IN_FILE',
             help="File to read")
     parser.add_argument('-o', '--outfile', metavar='OUT_FILE',
             default=None,
