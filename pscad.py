@@ -219,9 +219,9 @@ class SelectText(urwid.Widget):
             self.node.cling()
         elif key == 'shift tab':    ## Be parents sibling
             self.node.decling()
-        elif key == 'P':            ## Be next sibling
+        elif key == 'p':            ## Be next sibling
             self.node.merge_after(self.buf.load())
-        elif key == 'p':            ## Be previous sibling
+        elif key == 'P':            ## Be previous sibling
             self.node.merge_before(self.buf.load())
         elif key == 'Y':            ## Cut node, transfer children to parent
             self.buf.store(self.node.detach())
@@ -241,34 +241,34 @@ class SelectText(urwid.Widget):
             self.toggle_modifier("%")
         elif key == '/':
             self.toggle_comment()
-        elif key == 'd':
-            self.node.merge_outer(Node("difference()"))
         elif key == 'D':
+            self.node.merge_outer(Node("difference()"))
+        elif key == 'd':
             self.node.merge_inner(Node("difference()"))
-        elif key == 'u':
-            self.node.merge_outer(Node("union()"))
         elif key == 'U':
+            self.node.merge_outer(Node("union()"))
+        elif key == 'u':
             self.node.merge_inner(Node("union()"))
-        elif key == 'i':
-            self.node.merge_outer(Node("intersection()"))
         elif key == 'I':
+            self.node.merge_outer(Node("intersection()"))
+        elif key == 'i':
             self.node.merge_inner(Node("intersection()"))
-        elif key == 't':
-            self.node.merge_outer(Node("translate([0, 0, 0])"))
         elif key == 'T':
+            self.node.merge_outer(Node("translate([0, 0, 0])"))
+        elif key == 't':
             self.node.merge_inner(Node("translate([0, 0, 0])"))
-        elif key == 'r':
-            self.node.merge_outer(Node("rotate([0, 0, 0])"))
         elif key == 'R':
+            self.node.merge_outer(Node("rotate([0, 0, 0])"))
+        elif key == 'r':
             self.node.merge_inner(Node("rotate([0, 0, 0])"))
-        elif key == 's':
-            self.node.merge_outer(Node("scale([0, 0, 0])"))
         elif key == 'S':
+            self.node.merge_outer(Node("scale([0, 0, 0])"))
+        elif key == 's':
             self.node.merge_inner(Node("scale([0, 0, 0])"))
-        elif key == 'a':
-            self.node.merge_before(Node(NEW_LINE_CONTENT, True))
         elif key == 'A':
             self.node.merge_after(Node(NEW_LINE_CONTENT, True))
+        elif key == 'a':
+            self.node.merge(0, Node(NEW_LINE_CONTENT, True))
         else:
             return key
 
