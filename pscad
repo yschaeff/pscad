@@ -454,4 +454,10 @@ if __name__ == "__main__":
     frame = urwid.Frame(body, footer=footer_pretty, focus_part='body')
 
     main = urwid.MainLoop(frame, palette, unhandled_input=show_or_exit)
-    main.run()
+    while True:
+        try:
+            main.run()
+        except KeyboardInterrupt:
+            manager.status("press 'q' to quit or 'Q' to quit without saving.")
+            continue
+        break
