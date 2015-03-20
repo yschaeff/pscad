@@ -1,4 +1,3 @@
-import curses
 from copy import deepcopy
 
 

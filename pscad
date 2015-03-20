@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import curses, urwid
+import urwid
 from sys import argv
 
 ## project specific includes
