@@ -16,13 +16,12 @@ Pscad will open and parse `IN_FILE`. The file will not automatically be written 
 
 ## COMMANDS
 ### CONTROL
-* z	Undo last action.
-* Z	Redo last undo.
-* q	Quit Pscad.
-* Q	Quit Pscad even if document is not (auto) written.
-* w	Write file, when no OUT_FILE given overwrite IN_FILE.
-* (W	Save as, NOT IMPLEMENTED YET)
-* esc	Reset edits and close dialogs
+* `z` - Undo last action.
+* `Z` - Redo last undo.
+* `q` - Quit Pscad.
+* `Q` - Quit Pscad even if document is not (auto) written.
+* `w` - Write file, when no OUT_FILE given overwrite IN_FILE.
+* `esc` - Reset edits and close dialogs
 
 ### NAVIGATION
 up/down, home/end, page up/down
@@ -43,10 +42,10 @@ up/down, home/end, page up/down
 * enter	Start editing a node.
 
 ### MODIFIERS
-* *	Toggle 'disable'
-* !	Toggle 'show only'
-* #	Toggle 'highlight'
-* %	Toggle 'transparent'
+* *	Toggle *disable*
+* !	Toggle *show only*
+* #	Toggle *highlight*
+* %	Toggle *transparent*
 * /	Toggle comment
 
 ### SHORTCUTS
