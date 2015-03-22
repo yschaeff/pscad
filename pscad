@@ -135,7 +135,13 @@ class HelpEdit(urwid.Edit):
         return 1 + self.suggest.rows(size, focus)
 
     def keypress(self, size, key):
+        ## todo do a
+        ## val.complete(self)
+        ## so it can set cursor coords
         if key == 'tab':
+            val.complete(self, size)
+            return None
+            
             newtext = val.complete(self.text)
             #~ newtext += val.suggest_args(newtext)
             self.set_edit_text(newtext)

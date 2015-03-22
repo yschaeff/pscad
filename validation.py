@@ -53,45 +53,38 @@ def is_valid(text):
 Keyword = namedtuple('Keyword', 'word args args_cursor_offset desr usage help')
 
 
-keywords = ['module', 'function', 'include', 'use', 'circle', 'square', 'polygon', 'text', 'sphere', 'cube', 'cylinder', 'polyhedron', 'Transformations', 'translate', 'rotate', 'scale', 'resize', 'mirror', 'multmatrix', 'color', 'offset', 'hull', 'minkowski', 'union', 'difference', 'intersection', 'abs', 'sign', 'sin', 'cos', 'tan', 'acos', 'asin', 'atan', 'atan2', 'floor', 'round', 'ceil', 'ln', 'len', 'let', 'log', 'pow', 'sqrt', 'exp', 'rands', 'min', 'max', 'concat', 'lookup', 'str', 'chr', 'search', 'version', 'version_num', 'norm', 'cross', 'parent_module', 'echo', 'for ', 'intersection_for', 'if ', 'assign ', 'import', 'linear_extrude', 'rotate_extrude', 'surface', 'projection', 'render', 'children', '$fa', '$fs', '$fn', '$t', '$vpr', '$vpt', '$vpd', '$children']
+keywords = ['module', 'function', 'include', 'use', 'circle', 'square', 'polygon', 'text', 'sphere', 'cube', 'cylinder', 'polyhedron', 'translate', 'rotate', 'scale', 'resize', 'mirror', 'multmatrix', 'color', 'offset', 'hull', 'minkowski', 'union', 'difference', 'intersection', 'abs', 'sign', 'sin', 'cos', 'tan', 'acos', 'asin', 'atan', 'atan2', 'floor', 'round', 'ceil', 'ln', 'len', 'let', 'log', 'pow', 'sqrt', 'exp', 'rands', 'min', 'max', 'concat', 'lookup', 'str', 'chr', 'search', 'version', 'version_num', 'norm', 'cross', 'parent_module', 'echo', 'for ', 'intersection_for', 'if ', 'assign ', 'import', 'linear_extrude', 'rotate_extrude', 'surface', 'projection', 'render', 'children', '$fa', '$fs', '$fn', '$t', '$vpr', '$vpt', '$vpd', '$children']
 keywords.sort()
 
-kw = [Keyword('module', ' ()', 2, "Defines procedure", "module modname(args", None)
+kw = [
+    Keyword('module', ' ()', 2, "Defines procedure", "module modname(args)", None),
+    Keyword('function', ' () = ', 5, "Defines function", "function funcname(args) = ", None),
+    Keyword('include', ' <.scad>', 6, "Include an external file", "", None),
+    Keyword('use', ' <>', 1, "", "", None),
+    Keyword('circle', '(r = )', 1, "", "", None),
+    Keyword('square', '(size = [], center = True)', 17, "", "", None),
+    Keyword('polygon', '(points = [ [] ], paths = [ [] ])', 20, "", "", None),
+    Keyword('text', '("")', 2, "", "", None),
+    Keyword('sphere', '(r = )', 1, "", "", None),
+    Keyword('cube', '(size = [], center = true)', 17, "", "", None),
+    Keyword('cylinder', '(h = , r = 1)', 8, "", "", None),
+    Keyword('polyhedron', '(points = [ [] ], faces = [ [] ])', 20, "", "", None),
+    Keyword('translate', '(v = [])', 2, "", "", None),
+    Keyword('rotate', '(a = , v = [])', 9, "", "", None),
+    Keyword('scale', '()', 1, "", "", None),
+    Keyword('resize', '()', 1, "", "", None),
+    Keyword('mirror', '()', 1, "", "", None),
+    Keyword('', '()', 1, "", "", None),
+    Keyword('', '()', 1, "", "", None),
+    Keyword('', '()', 1, "", "", None),
+    Keyword('', '()', 1, "", "", None),
+    Keyword('', '()', 1, "", "", None),
+    Keyword('', '()', 1, "", "", None),
+    Keyword('', '()', 1, "", "", None),
 ]
 lu = {}
 for k in kw:
-    lu[k.word] = k
-
-#~ default_args = {
-    #~ 'include': " <>",
-    #~ 'circle': "(r=1)",
-    #~ 'square': "([2,2], center = true)",
-    #~ 'polygon': "(points = [ [x, y], ... ], paths = [ [p1, p2, p3..], ...], convexity = N)",
-    #~ 'text': '("")',
-    #~ 'sphere': '()',
-    #~ 'cube': '()',
-    #~ '': '()',
-    #~ '': '()',
-    #~ '': '()',
-    #~ '': '()',
-    #~ '': '()',
-    #~ '': '()',
-    #~ '': '()',
-    #~ '': '()',
-    #~ '': '()',
-    #~ 
-#~ }
-#~ 
-#~ 
-#~ def suggest_args(text):
-    #~ space = text.rfind(" ")
-    #~ if space != -1:
-        #~ prefix = text[space+1:]
-    #~ else:
-        #~ prefix = text
-    #~ if prefix in default_args:
-        #~ return default_args[prefix]
-    #~ return ""
+    lu[k.word.lower()] = k
 
 def suggest(text):
     space = text.rfind(" ")
@@ -112,7 +105,9 @@ def common(s1, s2):
         i += 1
     return i
 
-def complete(text):
+def complete(edit, size):
+    ## todo: move this function to widget
+    text = edit.text.lower()
     space = text.rfind(" ")
     if space != -1:
         postfix = text[:space+1]
@@ -125,12 +120,20 @@ def complete(text):
     if prefix in s:
         s.remove(prefix)
     if len(s) == 0:
-        return text
+        return
     elif len(s) == 1:
-        return postfix + s[0] +lu[s[0]].args
+        keyword = s[0]
+        if keyword in lu:
+            kw = lu[keyword]
+            edit.set_edit_text(postfix + keyword + kw.args)
+            edit.move_cursor_to_coords(size, len(edit.text)-kw.args_cursor_offset, 0)
+        else:
+            edit.set_edit_text(postfix + keyword)
+            edit.move_cursor_to_coords(size, len(edit.text), 0)
+        return
     a = s[0]
     b = s[1:]
     c = [common(a, d) for d in b]
     m = min(c)
-    return postfix + a[:m]
-    
+    edit.set_edit_text(postfix + a[:m])
+    edit.move_cursor_to_coords(size, len(edit.text), 0)    
