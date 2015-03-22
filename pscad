@@ -13,7 +13,8 @@ import validation as val
 UNDO_CAP = 1000 ## number of undo levels
 SPACE_PER_INDENT = 4
 HELP_STRING = "yYxXpPgGzZaA *!#%/ dDuUiItTrRsS wqQ"
-NEW_LINE_CONTENT = "//"
+NEW_LINE_CONTENT = ""
+EMPTY_LINE_DISPLAY = "// [EMPTY LINE] //"
 
 SPACE    = 'space'
 ARGUMENT = 'args'
@@ -89,6 +90,8 @@ class ColorText(urwid.Text):
 
     def set_text(self, input_text):
         global exps
+        if input_text == "":
+            input_text = EMPTY_LINE_DISPLAY
         if self.valid:
             text = input_text
             for r,c in exps.items():
@@ -187,7 +190,7 @@ class SelectText(urwid.Widget):
 
         self.text.set_text(newtext)
         ## assign back to node now newtext is cleaned
-        self.node.content = self.text.text
+        self.node.content = newtext
 
     def reset(self):
         if self.showedit:
