@@ -156,6 +156,13 @@ class HelpEdit(urwid.Edit):
         canvas2 = self.suggest.render(size)
         return urwid.CanvasCombine([(canvas, True, True), (canvas2, None, False)])
 
+def select(node):
+    if node.children:
+        manager.select = node.children[0]
+    else:
+        manager.select = node
+    return node
+
 class SelectText(urwid.Widget):
     def __init__(self, node, treelist, buf):
         super().__init__()
@@ -220,6 +227,8 @@ class SelectText(urwid.Widget):
         if self.showedit:
             return self.edit.keypress(size, key)
 
+        manager.select = None
+
         ## in Text mode
         if key == 'g':              ## Be siblings parent
             self.node.gobble()
@@ -230,7 +239,7 @@ class SelectText(urwid.Widget):
         elif key == 'shift tab':    ## Be parents sibling
             self.node.decling()
         elif key == 'p':            ## Be next sibling
-            self.node.merge_after(self.buf.load())
+            self.node.merge_after(select(self.buf.load()))
         elif key == 'P':            ## Be previous sibling
             self.node.merge_before(self.buf.load())
         elif key == 'Y':            ## Cut node, transfer children to parent
@@ -252,33 +261,33 @@ class SelectText(urwid.Widget):
         elif key == '/':
             self.toggle_comment()
         elif key == 'D':
-            self.node.merge_outer(Node("difference()"))
+            self.node.merge_outer(select(Node("difference()")))
         elif key == 'd':
-            self.node.merge_inner(Node("difference()"))
+            self.node.merge_inner(select(Node("difference()")))
         elif key == 'U':
-            self.node.merge_outer(Node("union()"))
+            self.node.merge_outer(select(Node("union()")))
         elif key == 'u':
-            self.node.merge_inner(Node("union()"))
+            self.node.merge_inner(select(Node("union()")))
         elif key == 'I':
-            self.node.merge_outer(Node("intersection()"))
+            self.node.merge_outer(select(Node("intersection()")))
         elif key == 'i':
-            self.node.merge_inner(Node("intersection()"))
+            self.node.merge_inner(select(Node("intersection()")))
         elif key == 'T':
-            self.node.merge_outer(Node("translate([0, 0, 0])"))
+            self.node.merge_outer(select(Node("translate([0, 0, 0])")))
         elif key == 't':
-            self.node.merge_inner(Node("translate([0, 0, 0])"))
+            self.node.merge_inner(select(Node("translate([0, 0, 0])")))
         elif key == 'R':
-            self.node.merge_outer(Node("rotate(0, [0, 0, 0])"))
+            self.node.merge_outer(select(Node("rotate(0, [0, 0, 0])")))
         elif key == 'r':
-            self.node.merge_inner(Node("rotate(0, [0, 0, 0])"))
+            self.node.merge_inner(select(Node("rotate(0, [0, 0, 0])")))
         elif key == 'S':
-            self.node.merge_outer(Node("scale([0, 0, 0])"))
+            self.node.merge_outer(select(Node("scale([0, 0, 0])")))
         elif key == 's':
-            self.node.merge_inner(Node("scale([0, 0, 0])"))
+            self.node.merge_inner(select(Node("scale([0, 0, 0])")))
         elif key == 'A':
-            self.node.merge_after(Node(NEW_LINE_CONTENT, True))
+            self.node.merge_after(select(Node(NEW_LINE_CONTENT, True)))
         elif key == 'a':
-            self.node.merge(0, Node(NEW_LINE_CONTENT, True))
+            self.node.merge(0, select(Node(NEW_LINE_CONTENT, True)))
         else:
             return key
 
@@ -330,14 +339,16 @@ class TreeListBox(urwid.ListBox):
         if self.update_tree:
             self.update_tree = False
             tree_text = []
-            for node in self.manager.get_tree():
-                t = SelectText(node, self, self.buf)
-                p = urwid.Padding(t, align='left', width='pack', min_width=None, left=node.depth()*self.indent)
-                tree_text.append(p)
             if len(self.body) > 0:
                 pos = self.focus_position
             else:
                 pos = 0
+            for i, node in enumerate(self.manager.get_tree()):
+                t = SelectText(node, self, self.buf)
+                p = urwid.Padding(t, align='left', width='pack', min_width=None, left=node.depth()*self.indent)
+                tree_text.append(p)
+                if node == self.manager.select:
+                    pos = i
             self.body.clear()
             self.body.extend(tree_text)
             if pos < len(self.body):
@@ -393,6 +404,7 @@ class Manager():
         self.autosave = (outfile != None)
         self.tree = importer.import_scad(infile)
         self.undoer.store(self.tree)
+        self.select = None
 
     def status(self, text):
         self.status_text.set_text(text)
