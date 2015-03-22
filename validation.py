@@ -49,8 +49,49 @@ def is_valid(text):
             return True
     return False
 
-keywords = ['module', 'function', 'include', 'use', 'circle', 'square', 'polygon', 'text', 'sphere', 'cube', 'cylinder', 'polyhedron', 'Transformations', 'translate', 'rotate', 'scale', 'resize', 'mirror', 'multmatrix', 'color', 'offset', 'hull', 'minkowski', 'Boolean operations', 'union', 'difference', 'intersection', 'abs', 'sign', 'sin', 'cos', 'tan', 'acos', 'asin', 'atan', 'atan2', 'floor', 'round', 'ceil', 'ln', 'len', 'let', 'log', 'pow', 'sqrt', 'exp', 'rands', 'min', 'max', 'concat', 'lookup', 'str', 'chr', 'search', 'version', 'version_num', 'norm', 'cross', 'parent_module', 'echo', 'for ', 'intersection_for', 'if ', 'assign ', 'import', 'linear_extrude', 'rotate_extrude', 'surface', 'projection', 'render', 'children', '$fa', '$fs', '$fn', '$t', '$vpr', '$vpt', '$vpd', '$children']
+
+Keyword = namedtuple('Keyword', 'word args args_cursor_offset desr usage help')
+
+
+keywords = ['module', 'function', 'include', 'use', 'circle', 'square', 'polygon', 'text', 'sphere', 'cube', 'cylinder', 'polyhedron', 'Transformations', 'translate', 'rotate', 'scale', 'resize', 'mirror', 'multmatrix', 'color', 'offset', 'hull', 'minkowski', 'union', 'difference', 'intersection', 'abs', 'sign', 'sin', 'cos', 'tan', 'acos', 'asin', 'atan', 'atan2', 'floor', 'round', 'ceil', 'ln', 'len', 'let', 'log', 'pow', 'sqrt', 'exp', 'rands', 'min', 'max', 'concat', 'lookup', 'str', 'chr', 'search', 'version', 'version_num', 'norm', 'cross', 'parent_module', 'echo', 'for ', 'intersection_for', 'if ', 'assign ', 'import', 'linear_extrude', 'rotate_extrude', 'surface', 'projection', 'render', 'children', '$fa', '$fs', '$fn', '$t', '$vpr', '$vpt', '$vpd', '$children']
 keywords.sort()
+
+kw = [Keyword('module', ' ()', 2, "Defines procedure", "module modname(args", None)
+]
+lu = {}
+for k in kw:
+    lu[k.word] = k
+
+#~ default_args = {
+    #~ 'include': " <>",
+    #~ 'circle': "(r=1)",
+    #~ 'square': "([2,2], center = true)",
+    #~ 'polygon': "(points = [ [x, y], ... ], paths = [ [p1, p2, p3..], ...], convexity = N)",
+    #~ 'text': '("")',
+    #~ 'sphere': '()',
+    #~ 'cube': '()',
+    #~ '': '()',
+    #~ '': '()',
+    #~ '': '()',
+    #~ '': '()',
+    #~ '': '()',
+    #~ '': '()',
+    #~ '': '()',
+    #~ '': '()',
+    #~ '': '()',
+    #~ 
+#~ }
+#~ 
+#~ 
+#~ def suggest_args(text):
+    #~ space = text.rfind(" ")
+    #~ if space != -1:
+        #~ prefix = text[space+1:]
+    #~ else:
+        #~ prefix = text
+    #~ if prefix in default_args:
+        #~ return default_args[prefix]
+    #~ return ""
 
 def suggest(text):
     space = text.rfind(" ")
@@ -86,7 +127,7 @@ def complete(text):
     if len(s) == 0:
         return text
     elif len(s) == 1:
-        return postfix + s[0]
+        return postfix + s[0] +lu[s[0]].args
     a = s[0]
     b = s[1:]
     c = [common(a, d) for d in b]

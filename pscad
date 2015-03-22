@@ -134,6 +134,7 @@ class HelpEdit(urwid.Edit):
     def keypress(self, size, key):
         if key == 'tab':
             newtext = val.complete(self.text)
+            #~ newtext += val.suggest_args(newtext)
             self.set_edit_text(newtext)
             self.move_cursor_to_coords(size, len(newtext), 0)
             return None
@@ -258,9 +259,9 @@ class SelectText(urwid.Widget):
         elif key == 't':
             self.node.merge_inner(Node("translate([0, 0, 0])"))
         elif key == 'R':
-            self.node.merge_outer(Node("rotate([0, 0, 0])"))
+            self.node.merge_outer(Node("rotate(0, [0, 0, 0])"))
         elif key == 'r':
-            self.node.merge_inner(Node("rotate([0, 0, 0])"))
+            self.node.merge_inner(Node("rotate(0, [0, 0, 0])"))
         elif key == 'S':
             self.node.merge_outer(Node("scale([0, 0, 0])"))
         elif key == 's':
