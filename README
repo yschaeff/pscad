@@ -1,5 +1,5 @@
 ## NAME
-Pscad - descr.
+Pscad - Terminal based OpenSCAD file editor
 
 ## SYNOPSIS
 `pscad.py [-h] [-o OUT_FILE] IN_FILE`
@@ -16,15 +16,15 @@ Pscad will open and parse `IN_FILE`. The file will not automatically be written 
 * `Z` - Redo last undo.
 * `q` - Quit Pscad.
 * `Q` - Quit Pscad even if document is not (auto) written.
-* `w` - Write file, when no OUT_FILE given overwrite IN_FILE.
+* `w` - Write to IN_FILE.
 * `esc` - Reset edits and close dialogs
 
 ### NAVIGATION
 `up/down, home/end, page up/down`
 
 ### TREE MANIPULATION
-* `y` - Yank node from tree and copy to clipboard. Its children will be transferred to its parent.
-* `Y` - Yank node and children from tree and copy to clipboard.
+* `y` - Yank single node. Copy to clipboard.
+* `Y` - Yank node and its children. Copy to clipboard.
 * `x` - Delete node from tree. Its children will be transferred to its parent.
 * `X` - Delete node and children from tree.
 * `p` - Paste clipboad contents after selected node as sibbling.
@@ -59,7 +59,10 @@ Pscad will open and parse `IN_FILE`. The file will not automatically be written 
 * `S` - New parent node scale()
 
 ## AUTHOR
+Yuri Schaeffer <yuri@schaeffer.tk>
 ## REPORTING BUGS
-## COPYRIGHT
+Email or Github
+## LICENCE
+MIT
 ## SEE ALSO
 openscad(1)
