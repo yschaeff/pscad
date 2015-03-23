@@ -67,7 +67,7 @@ kw = [
     Keyword('text', '("")', 2, "", "", None),
     Keyword('sphere', '(r = )', 1, "", "", None),
     Keyword('cube', '(size = [], center = true)', 17, "", "", None),
-    Keyword('cylinder', '(h = , r = 1)', 8, "", "", None),
+    Keyword('cylinder', '(h = , r = 1, center = true)', 23, "", "", None),
     Keyword('polyhedron', '(points = [ [] ], faces = [ [] ])', 20, "", "", None),
     Keyword('translate', '(v = [])', 2, "", "", None),
     Keyword('rotate', '(a = , v = [])', 9, "", "", None),

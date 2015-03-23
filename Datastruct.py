@@ -89,7 +89,7 @@ class Node():
         while p:
             p.descendants += 1
             p = p.parent
-                        
+
     def split(self):
         root = Node("Root")
         if self.parent == None:
@@ -127,6 +127,25 @@ class Node():
 
         self.parent = root
         root.children = [self]
+        return root
+
+    def subtree(self):
+        root = Node("Root")
+        if self.parent != None:
+            root.children.append(self)
+            root.descendants = self.descendants + 1
+            ## leave self.parent unresolved
+        return root
+
+    def copy_solo(self):
+        root = Node("Root")
+        node = Node(self.content)
+        if self.parent != None:
+            root.children.append(node)
+            root.descendants = 1
+            node.parent = root
+            node.descendants = 0
+            node.children = []
         return root
 
     def gobble(self):

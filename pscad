@@ -164,7 +164,7 @@ def select(node):
     return node
 
 class SelectText(urwid.Widget):
-    def __init__(self, node, treelist, buf):
+    def __init__(self, node, treelist, buf, status_cb):
         super().__init__()
         self.valid = val.is_valid(node.content)
         self.edit = HelpEdit("", node.content)
@@ -178,6 +178,7 @@ class SelectText(urwid.Widget):
         self.treelist = treelist
         self.indent = node.depth()
         self.buf = buf
+        self.status = status_cb
 
     def rows(self, size, focus=False):
         if self.showedit:
@@ -243,13 +244,18 @@ class SelectText(urwid.Widget):
         elif key == 'P':            ## Be previous sibling
             self.node.merge_before(self.buf.load())
         elif key == 'Y':            ## Cut node, transfer children to parent
-            self.buf.store(self.node.detach())
+            self.buf.store(self.node.copy_solo())
+            self.status("Yanked 1 node.")
         elif key == 'y':            ## Cut subtree
-            self.buf.store(self.node.split())
+            n = self.node.subtree()
+            self.buf.store(n)
+            self.status("Yanked %d nodes."%n.descendants)
         elif key == 'X':            ## Delete node, transfer children to parent
-            self.node.detach()
+            n = self.node.detach()
+            self.status("Deleted %d nodes."%n.descendants)
         elif key == 'x':            ## Delete subtree
-            self.node.split()
+            n = self.node.split()
+            self.status("Deleted %d nodes."%n.descendants)
         elif key == '*':
             self.toggle_modifier("*")
         elif key == '!':
@@ -344,7 +350,7 @@ class TreeListBox(urwid.ListBox):
             else:
                 pos = 0
             for i, node in enumerate(self.manager.get_tree()):
-                t = SelectText(node, self, self.buf)
+                t = SelectText(node, self, self.buf, self.manager.status)
                 p = urwid.Padding(t, align='left', width='pack', min_width=None, left=node.depth()*self.indent)
                 tree_text.append(p)
                 if node == self.manager.select:
@@ -358,6 +364,7 @@ class TreeListBox(urwid.ListBox):
 
     def keypress(self, size, key):
         key = super().keypress(size, key)
+        if not key: return key
         manager.status(".")
         if key == 'esc':
             [n._original_widget.reset() for n in self.body]
