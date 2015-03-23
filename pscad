@@ -417,19 +417,13 @@ class Manager():
         self.status_text.set_text(text)
 
     def write(self):
-        if self.exportfile:
-            if not importer.export_scad(self.exportfile, self.tree):
-                return True
-        else:
-            if not importer.export_scad(self.infile, self.tree):
-                return True
-        return False
+        return not importer.export_scad(self.infile, self.tree)
 
     def checkpoint(self, undo=True):
         if undo:
             self.undoer.store(self.tree)
         if self.autosave:
-            if self.write():
+            if not importer.export_scad(self.exportfile, self.tree):
                 self.saved = True
             else:
                 error("failed to export")
