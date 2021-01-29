@@ -243,10 +243,10 @@ class SelectText(urwid.Widget):
             self.node.merge_after(select(self.buf.load()))
         elif key == 'P':            ## Be previous sibling
             self.node.merge_before(self.buf.load())
-        elif key == 'Y':            ## Cut node, transfer children to parent
+        elif key == 'Y':            ## Yank node, transfer children to parent
             self.buf.store(self.node.copy_solo())
             self.status("Yanked 1 node.")
-        elif key == 'y':            ## Cut subtree
+        elif key == 'y':            ## Yank subtree
             n = self.node.subtree()
             self.buf.store(n)
             self.status("Yanked %d nodes."%n.descendants)

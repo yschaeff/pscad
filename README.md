@@ -23,18 +23,18 @@ Pscad will open and parse `IN_FILE`. The file will not automatically be written 
 `up/down, home/end, page up/down`
 
 ### TREE MANIPULATION
-* `y` - Yank single node. Copy to clipboard.
-* `Y` - Yank node and its children. Copy to clipboard.
-* `x` - Delete node from tree. Its children will be transferred to its parent.
-* `X` - Delete node and children from tree.
-* `p` - Paste clipboad contents after selected node as sibbling.
-* `P` - Paste clipboad contents before selected node as sibbling.
+* `y` - Yank node and its children. Copy to clipboard.
+* `Y` - Yank single node. Copy to clipboard.
+* `x` - Delete node and children from tree. Copy to clipboard.
+* `X` - Delete node from tree. Its children will be transferred to its parent. Copy to clipboard.
+* `p` - Paste clipboard contents after selected node as sibling.
+* `P` - Paste clipboard contents before selected node as sibling.
 * `g` - Gobble up next sibling and make it last child.
 * `G` - Degobble last child make it a sibling.
 * `a` - Insert new node as first child.
-* `A` - Inser new node as next sibling.
+* `A` - Insert new node as next sibling.
 * `Tab` - Push the node in sibling's child list.
-* `STab` - Pop node from parents child list and become a sibling.
+* `Shift Tab` - Pop node from parents child list and become a sibling.
 * `enter` - Start editing a node.
 
 ### MODIFIERS
@@ -46,7 +46,7 @@ Pscad will open and parse `IN_FILE`. The file will not automatically be written 
 
 ### SHORTCUTS
 * `d` - New child node difference()
-* `D` - New parent node differnce()
+* `D` - New parent node difference()
 * `u` - New child node union()
 * `U` - New parent node union()
 * `i` - New child node intersection()
