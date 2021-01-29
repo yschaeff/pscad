@@ -254,9 +254,11 @@ class SelectText(urwid.Widget):
             self.status("Yanked %d nodes."%n.descendants)
         elif key == 'X':            ## Delete node, transfer children to parent
             n = self.node.detach()
+            self.buf.store(n)
             self.status("Deleted %d nodes."%n.descendants)
         elif key == 'x':            ## Delete subtree
             n = self.node.split()
+            self.buf.store(n)
             self.status("Deleted %d nodes."%n.descendants)
         elif key == '*':
             self.toggle_modifier("*")
