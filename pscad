@@ -157,7 +157,9 @@ class HelpEdit(urwid.Edit):
         return urwid.CanvasCombine([(canvas, True, True), (canvas2, None, False)])
 
 def select(node):
-    if node.children:
+    if not node:
+        return None
+    elif node.children:
         manager.select = node.children[0]
     else:
         manager.select = node
