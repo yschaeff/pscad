@@ -11,8 +11,8 @@ from undo import Undo
 import validation as val
 
 UNDO_CAP = 1000 ## number of undo levels
-SPACE_PER_INDENT = 4
-HELP_STRING = "yYxXpPgGzZaA *!#%/ dDuUiItTrRsS wqQ"
+SPACE_PER_INDENT = 2
+HELP_STRING = "yYxXpPgGzZaA<> *!#%/ dDuUiItTrRsS wqQ"
 NEW_LINE_CONTENT = ""
 EMPTY_LINE_DISPLAY = "// [EMPTY LINE] //"
 
@@ -237,9 +237,13 @@ class SelectText(urwid.Widget):
             self.node.gobble()
         elif key == 'G':            ## Be childs sibling
             self.node.degobble()
-        elif key == 'tab':          ## Be sibling child
+        elif key == 'tab':          ## Be siblings child
+            self.node.cling()
+        elif key == '>':          ## Be siblings child
             self.node.cling()
         elif key == 'shift tab':    ## Be parents sibling
+            self.node.decling()
+        elif key == '<':    ## Be parents sibling
             self.node.decling()
         elif key == 'p':            ## Be next sibling
             self.node.merge_after(select(self.buf.load()))
